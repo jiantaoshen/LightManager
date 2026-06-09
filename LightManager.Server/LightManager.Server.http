@@ -1,0 +1,6 @@
+@LightManager.Server_HostAddress = http://localhost:5037
+
+GET {{LightManager.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

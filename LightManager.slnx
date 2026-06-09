@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="lightmanager.client/lightmanager.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="LightManager.Server/LightManager.Server.csproj" />
+</Solution>

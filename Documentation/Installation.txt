@@ -1,0 +1,6 @@
+Make sure it install in xxxx.client
+cd ….client
+npm install react-router-dom
+
+npm install tailwindcss @tailwindcss/vite
+(follow steps in https://tailwindcss.com/docs/installation/using-vite)
