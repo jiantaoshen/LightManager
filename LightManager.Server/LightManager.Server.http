@@ -1,6 +1,11 @@
-@LightManager.Server_HostAddress = http://localhost:5037
+@LightManager.Server_HostAddress = https://localhost:7233
 
-GET {{LightManager.Server_HostAddress}}/weatherforecast/
-Accept: application/json
+###
+POST {{LightManager.Server_HostAddress}}/api/auth/login
+Content-Type: application/json
 
+{
+  "email": "1@test.se",
+  "password": "Abc_1234!"
+}
 ###
