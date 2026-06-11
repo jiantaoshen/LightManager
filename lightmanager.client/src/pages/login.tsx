@@ -35,7 +35,8 @@ export default function Login() {
 
             const result = await response.json();
 
-            // IMPORTANT: this updates navbar
+            localStorage.setItem("token", result.token);
+
             login({
                 fullName: result.fullName,
                 email: result.email,

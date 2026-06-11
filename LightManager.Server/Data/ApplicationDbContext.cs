@@ -21,11 +21,7 @@ namespace LightManager.Server.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<ProjectMemberModel>()
-                .HasKey(pm => new
-                {
-                    pm.ProjectId,
-                    pm.UserId
-                });
+                .HasKey(pm => new{pm.ProjectId,pm.UserId});
 
             modelBuilder.Entity<ProjectMemberModel>()
                 .HasOne(pm => pm.Project)

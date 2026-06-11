@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,12 +36,7 @@ export default function Register() {
                 return;
             }
 
-            alert("Registration successful!");
-
-            setFullName("");
-            setEmail("");
-            setPassword("");
-            setConfirmPassword("");
+            navigate("/login"); // redirect after login
         } catch (error) {
             console.error(error);
             alert("Failed to connect to server");

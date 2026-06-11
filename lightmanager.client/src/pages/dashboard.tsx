@@ -1,44 +1,12 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-
-interface Project {
-    id: number;
-    name: string;
-    owner: string;
-    status: "Active" | "Completed" | "Archived";
-    members: number;
-    dueDate: string;
-}
+import { type Project } from "../interfaces/IProject";
+import { useState, useEffect } from "react";
+import { getProjects, createProject } from "../services/projectService";
 
 export default function Dashboard() {
     const navigate = useNavigate();
 
-    const projects: Project[] = [
-        {
-            id: 1,
-            name: "Website Redesign",
-            owner: "John Doe",
-            status: "Active",
-            members: 5,
-            dueDate: "2026-07-15",
-        },
-        {
-            id: 2,
-            name: "Mobile Application",
-            owner: "Sarah Smith",
-            status: "Active",
-            members: 8,
-            dueDate: "2026-08-10",
-        },
-        {
-            id: 3,
-            name: "CRM Migration",
-            owner: "Michael Brown",
-            status: "Completed",
-            members: 4,
-            dueDate: "2026-05-20",
-        },
-    ];
+    const [projects, setProjects] = useState<Project[]>([]);
 
     const getStatusClass = (status: Project["status"]) => {
         switch (status) {
@@ -52,6 +20,21 @@ export default function Dashboard() {
                 return "";
         }
     };
+
+    useEffect(() => {
+        const loadProjects = async () => {
+            try {
+                const data =
+                    await getProjects();
+
+                setProjects(data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        loadProjects();
+    }, []);
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
@@ -69,7 +52,24 @@ export default function Dashboard() {
 
                     <button
                         className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                        onClick={() => navigate("/projects/create")}
+                        onClick={async () => {
+                            try {
+                                const project =
+                                    await createProject({
+                                        name: "New Project",
+                                        description: "",
+                                    });
+
+                                navigate(
+                                    `/projects/${project.id}`
+                                );
+                            } catch (error) {
+                                console.error(error);
+                                alert(
+                                    "Failed to create project"
+                                );
+                            }
+                        }}
                     >
                         New Project
                     </button>

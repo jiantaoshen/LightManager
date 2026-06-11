@@ -1,0 +1,624 @@
+import { useState, useEffect } from "react";
+import { getProject, updateProject, deleteProject, addMember, removeMember } from "../services/projectService";
+import { useParams, useNavigate } from "react-router-dom";
+import { type Task, type Status } from "../interfaces/ITask";
+import { type Project, type Member } from "../interfaces/IProject";
+import { getTasks, createTask, updateTask, deleteTask } from "../services/taskService";
+
+export default function KanbanBoard() {
+    const navigate = useNavigate();
+    const { projectId } = useParams<{ projectId: string }>();
+
+    // ===================== STATE =====================
+    // For project details
+    const [project, setProject] = useState<Project | null>(null);
+    const [editProject, setEditProject] = useState<Project | null>(null);
+
+    // For tasks and kanban
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
+    const [isEditingProject, setIsEditingProject] = useState(false);
+    const statuses: Status[] = ["Todo", "In Progress", "Review", "Done"];
+
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [assignedUserId, setAssignedUserId] = useState("");
+
+    // For members management
+    const [members, setMembers] = useState<Member[]>([]);
+    const [newEmail, setNewEmail] = useState("");
+    const [loadingAdd, setLoadingAdd] = useState(false);
+
+    // ===================== LOAD PROJECT =====================
+    useEffect(() => {
+        if (!projectId) return;
+
+        const load = async () => {
+            const data = await getProject(Number(projectId));
+
+            setProject(data);
+            setMembers(data.members);
+        };
+
+        load();
+    }, [projectId]);
+
+    // ===================== DRAG LOGIC =====================
+    const handleDragStart = (taskId: number) => {
+        setDraggedTaskId(taskId);
+    };
+
+    const handleDropColumn = (status: Status) => {
+        if (draggedTaskId === null) return;
+
+        setTasks((prev) =>
+            prev.map((t) =>
+                t.id === draggedTaskId ? { ...t, status } : t
+            )
+        );
+
+        setDraggedTaskId(null);
+    };
+
+    const handleDropTask = (targetTaskId: number) => {
+        if (draggedTaskId === null) return;
+
+        setDraggedTaskId(null);
+    };
+
+    // ===================== SAVE PROJECT =====================
+    const handleSave = async () => {
+        if (!editProject) return;
+
+        try {
+            const updated = await updateProject(editProject.id, {
+                name: editProject.name,
+                description: editProject.description
+            });
+
+            setProject(updated);
+            setIsEditingProject(false);
+            setEditProject(null);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update project");
+        }
+    };
+
+    // ===================== DELETE PROJECT =====================
+    const handleDelete = async () => {
+        if (!project) return;
+
+        const confirmed = window.confirm("Delete project?");
+        if (!confirmed) return;
+
+        try {
+            await deleteProject(project.id);
+            navigate("/");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete project");
+        }
+    };
+
+    // ---------------- ADD MEMBER ----------------
+    const handleAddMember = async () => {
+        if (!project) {
+            console.log("NO PROJECT");
+            return;
+        }
+
+        if (!newEmail.trim()) {
+            console.log("EMPTY EMAIL");
+            return;
+        }
+
+        try {
+            setLoadingAdd(true);
+
+            console.log("CALL API:", newEmail);
+
+            const added = await addMember(project.id, newEmail);
+
+            console.log("ADDED MEMBER:", added);
+
+            setMembers((prev) => [...prev, added]);
+            setNewEmail("");
+        } catch (err) {
+            console.error("ADD MEMBER ERROR:", err);
+            alert("Failed to add member (check console)");
+        } finally {
+            setLoadingAdd(false);
+        }
+    };
+
+    // ---------------- REMOVE MEMBER ----------------
+    const handleRemoveMember = async (userId: string) => {
+        if (!project) return;
+
+        try {
+            await removeMember(project.id, userId);
+
+            setMembers(prev =>
+                prev.filter(m => m.userId !== userId)
+            );
+        } catch (err) {
+            console.error(err);
+            alert("Failed to remove member");
+        }
+    };
+
+    // ===================== CREATE TASK =====================
+    const handleCreateTask = async () => {
+        const newTask = await createTask(Number(projectId), {
+            title: "New Task",
+            description: "",
+            status: "Todo",
+            priority: "Medium",
+            assignedUserId: assignedUserId,
+        });
+
+        setTasks([...tasks, newTask]);
+    };
+
+    // ===================== UPDATE TASK =====================
+    const handleUpdateTask = async (task: Task) => {
+        const updated = await updateTask(Number(projectId), task.id, task);
+
+        setTasks(prev =>
+            prev.map(t => (t.id === task.id ? updated : t))
+        );
+    };
+
+    // ===================== DELETE TASK =====================
+    const handleDeleteTask = async (taskId: number) => {
+        await deleteTask(Number(projectId), taskId);
+
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+    };
+
+    // ===================== LOAD TASKS =====================
+    useEffect(() => {
+        if (!projectId) return;
+
+        getTasks(Number(projectId)).then(setTasks);
+    }, [projectId]);
+
+    // ===================== UI =====================
+    return (
+        <>
+        <div className="min-h-screen bg-slate-50 p-6">
+            <div className="mx-auto max-w-7xl">
+
+                {/* HEADER */}
+                <div className="mb-8 rounded-xl bg-white p-6 shadow">
+
+                    {!isEditingProject ? (
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold">
+                                    {project?.name}
+                                </h1>
+
+                                <p className="mt-2 text-slate-500">
+                                    {project?.description}
+                                </p>
+
+                                {/* MEMBERS */}
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {members.map((m) => (
+                                        <div
+                                            key={m.userId}
+                                            className={`px-3 py-1 rounded-full text-sm ${m.role === "Manager"
+                                                    ? "bg-red-100 text-red-700"
+                                                    : "bg-blue-100 text-blue-700"
+                                                }`}
+                                        >
+                                            {m.userName} ({m.role})
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setEditProject(project);
+                                        setIsEditingProject(true);
+                                    }}
+                                    className="flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                                >
+                                    <span>Edit</span>
+                                </button>
+
+                                <button
+                                    onClick={handleDelete}
+                                    className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                                >
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+
+                            {/* NAME */}
+                            <input
+                                className="w-full border p-2 rounded"
+                                value={editProject?.name || ""}
+                                onChange={(e) =>
+                                    setEditProject((prev) =>
+                                        prev
+                                            ? { ...prev, name: e.target.value }
+                                            : prev
+                                    )
+                                }
+                            />
+
+                            {/* DESCRIPTION */}
+                            <textarea
+                                className="w-full border p-2 rounded"
+                                value={editProject?.description || ""}
+                                onChange={(e) =>
+                                    setEditProject((prev) =>
+                                        prev
+                                            ? {
+                                                ...prev,
+                                                description: e.target.value
+                                            }
+                                            : prev
+                                    )
+                                }
+                            />
+
+                                {/* MEMBERS */}
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {members.map((m) => (
+                                        <span
+                                            key={m.userId}
+                                            className={`px-3 py-1 rounded-full flex items-center gap-2 ${m.role === "Manager"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-blue-100 text-blue-700"
+                                                }`}
+                                        >
+                                            {m.userName} ({m.role})
+
+                                            {m.role !== "Manager" && (
+                                                <button
+                                                    onClick={() =>
+                                                        handleRemoveMember(m.userId)
+                                                    }
+                                                    className="text-red-500"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* ADD MEMBER INPUT */}
+                                <div className="flex gap-2 mb-4">
+                                    <input
+                                        type="email"
+                                        className="border p-2 flex-1"
+                                        placeholder="user@email.com"
+                                        value={newEmail}
+                                        onChange={(e) =>
+                                            setNewEmail(e.target.value)
+                                        }
+                                    />
+
+                                    <button
+                                        onClick={handleAddMember}
+                                        disabled={loadingAdd}
+                                        className="bg-green-600 text-white px-3 rounded"
+                                    >
+                                        {loadingAdd ? "..." : "Add"}
+                                    </button>
+                                </div>
+
+                            {/* BUTTONS */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleSave}
+                                    className="bg-green-600 text-white px-4 py-2 rounded"
+                                >
+                                    Save
+                                </button>
+
+                                <button
+                                    onClick={() =>
+                                        setIsEditingProject(false)
+                                    }
+                                    className="bg-gray-300 px-4 py-2 rounded"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setSelectedTask({
+                                id: 0,
+                                title: "",
+                                description: "",
+                                status: "Todo",
+                                priority: "Medium",
+                                assignedUserId: undefined,
+                                assignedUserName: undefined
+                            });
+
+                            setIsTaskModalOpen(true);
+                        }}
+                        className="mb-4 rounded bg-blue-600 px-4 py-2 text-white"
+                    >
+                        + New Task
+                    </button>
+
+                {/* KANBAN */}
+                    <div className="grid grid-cols-4 gap-4">
+                        {statuses.map((status) => (
+                            <div
+                                key={status}
+                                className="min-h-[400px] rounded bg-white p-4 shadow"
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => handleDropColumn(status)}
+                            >
+                                <h2 className="mb-3 font-bold">{status}</h2>
+
+                                {tasks
+                                    .filter((t) => t.status === status)
+                                    .map((task) => (
+                                        <div
+                                            key={task.id}
+                                            draggable
+                                            onClick={() => {
+                                                setSelectedTask(task);
+                                                setIsTaskModalOpen(true);
+                                            }}
+                                            className="mb-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition hover:shadow"
+                                        >
+                                            {/* Title */}
+                                            <h3 className="font-medium text-slate-800">
+                                                {task.title}
+                                            </h3>
+
+                                            {/* Assigned Member */}
+                                            <p className="mt-2 text-sm text-slate-500">
+                                                Assigned to:{" "}
+                                                {task.assignedUserName || "Unassigned"}
+                                            </p>
+
+                                            {/* Priority */}
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <span
+                                                    className={`rounded-full px-2 py-1 text-xs font-medium ${task.priority === "High"
+                                                            ? "bg-red-100 text-red-700"
+                                                            : task.priority === "Medium"
+                                                                ? "bg-yellow-100 text-yellow-700"
+                                                                : "bg-green-100 text-green-700"
+                                                        }`}
+                                                >
+                                                    {task.priority}
+                                                </span>
+
+                                                <span className="text-xs text-slate-400">
+                                                    #{task.id}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        ))}
+                    </div>
+            </div>
+        </div>
+
+            {/* TASK MODAL */}
+            {isTaskModalOpen && selectedTask && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+
+                        <h2 className="mb-4 text-xl font-bold">
+                            {selectedTask.id === 0 ? "Create Task" : "Edit Task"}
+                        </h2>
+
+                        <div className="space-y-4">
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Title
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={selectedTask.title}
+                                    onChange={(e) =>
+                                        setSelectedTask({
+                                            ...selectedTask,
+                                            title: e.target.value
+                                        })
+                                    }
+                                    className="w-full rounded border px-3 py-2"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    rows={4}
+                                    value={selectedTask.description || ""}
+                                    onChange={(e) =>
+                                        setSelectedTask({
+                                            ...selectedTask,
+                                            description: e.target.value
+                                        })
+                                    }
+                                    className="w-full rounded border px-3 py-2"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Priority
+                                </label>
+
+                                <select
+                                    value={selectedTask.priority}
+                                    onChange={(e) =>
+                                        setSelectedTask({
+                                            ...selectedTask,
+                                            priority: e.target.value as "Low" | "Medium" | "High"
+                                        })
+                                    }
+                                    className="w-full rounded border px-3 py-2"
+                                >
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Status
+                                </label>
+
+                                <select
+                                    value={selectedTask.status}
+                                    onChange={(e) =>
+                                        setSelectedTask({
+                                            ...selectedTask,
+                                            status: e.target.value as Status
+                                        })
+                                    }
+                                    className="w-full rounded border px-3 py-2"
+                                >
+                                    {statuses.map((status) => (
+                                        <option
+                                            key={status}
+                                            value={status}
+                                        >
+                                            {status}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    Assign To
+                                </label>
+
+                                <select
+                                    value={assignedUserId}
+                                    onChange={(e) =>
+                                        setAssignedUserId(e.target.value)
+                                    }
+                                    className="w-full rounded border p-2"
+                                >
+                                    <option value="">
+                                        Unassigned
+                                    </option>
+
+                                    {project?.members.map((member) => (
+                                        <option
+                                            key={member.userId}
+                                            value={member.userId}
+                                        >
+                                            {member.userName} ({member.role})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-between">
+
+                            <button
+                                onClick={async () => {
+                                    if (selectedTask.id === 0) {
+                                        const created =
+                                            await createTask(
+                                                Number(projectId),
+                                                selectedTask
+                                            );
+
+                                        setTasks((prev) => [
+                                            ...prev,
+                                            created
+                                        ]);
+                                    } else {
+                                        const updated =
+                                            await updateTask(
+                                                Number(projectId),
+                                                selectedTask.id,
+                                                selectedTask
+                                            );
+
+                                        setTasks((prev) =>
+                                            prev.map((t) =>
+                                                t.id === updated.id
+                                                    ? updated
+                                                    : t
+                                            )
+                                        );
+                                    }
+
+                                    setIsTaskModalOpen(false);
+                                    setSelectedTask(null);
+                                }}
+                                className="rounded bg-green-600 px-4 py-2 text-white"
+                            >
+                                Save
+                            </button>
+
+                            {selectedTask.id !== 0 && (
+                                <button
+                                    onClick={async () => {
+                                        await deleteTask(
+                                            Number(projectId),
+                                            selectedTask.id
+                                        );
+
+                                        setTasks((prev) =>
+                                            prev.filter(
+                                                (t) =>
+                                                    t.id !==
+                                                    selectedTask.id
+                                            )
+                                        );
+
+                                        setIsTaskModalOpen(false);
+                                        setSelectedTask(null);
+                                    }}
+                                    className="rounded bg-red-600 px-4 py-2 text-white"
+                                >
+                                    Delete
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => {
+                                    setIsTaskModalOpen(false);
+                                    setSelectedTask(null);
+                                }}
+                                className="rounded bg-slate-300 px-4 py-2"
+                            >
+                                Cancel
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+                )}
+            </>
+        );
+}  

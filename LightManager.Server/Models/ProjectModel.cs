@@ -13,7 +13,7 @@ namespace LightManager.Server.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public int CreatedByUserId { get; set; }
+        public string CreatedByUserId { get; set; } = string.Empty;
 
         public ApplicationUser CreatedByUser { get; set; } = null!;
 

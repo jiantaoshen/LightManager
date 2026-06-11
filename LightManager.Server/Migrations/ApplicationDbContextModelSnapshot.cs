@@ -4,7 +4,6 @@ using LightManager.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,15 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LightManager.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260609142638_InitialCreation")]
-    partial class InitialCreation
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -101,9 +98,6 @@ namespace LightManager.Server.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
@@ -129,10 +123,8 @@ namespace LightManager.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CreatedByUserId1")
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
@@ -148,7 +140,7 @@ namespace LightManager.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedByUserId1");
+                    b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Projects");
                 });
@@ -357,7 +349,9 @@ namespace LightManager.Server.Migrations
                 {
                     b.HasOne("LightManager.Server.Data.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedProjects")
-                        .HasForeignKey("CreatedByUserId1");
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("CreatedByUser");
                 });
