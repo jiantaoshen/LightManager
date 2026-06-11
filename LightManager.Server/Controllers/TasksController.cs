@@ -33,6 +33,7 @@ namespace LightManager.Server.Controllers
                     t.ProjectId,
                     t.AssignedUserId,
 
+
                     AssignedUserName =
                         t.AssignedUser != null
                         ? t.AssignedUser.UserName

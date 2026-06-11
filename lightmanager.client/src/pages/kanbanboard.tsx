@@ -158,6 +158,8 @@ export default function KanbanBoard() {
             assignedUserId: assignedUserId,
         });
 
+        console.log("assignedUserId:", assignedUserId);
+
         setTasks([...tasks, newTask]);
     };
 
@@ -519,9 +521,7 @@ export default function KanbanBoard() {
 
                                 <select
                                     value={assignedUserId}
-                                    onChange={(e) =>
-                                        setAssignedUserId(e.target.value)
-                                    }
+                                    onChange={(e) =>setAssignedUserId(e.target.value)}
                                     className="w-full rounded border p-2"
                                 >
                                     <option value="">
@@ -529,10 +529,7 @@ export default function KanbanBoard() {
                                     </option>
 
                                     {project?.members.map((member) => (
-                                        <option
-                                            key={member.userId}
-                                            value={member.userId}
-                                        >
+                                        <option key={member.userId} value={member.userId}>
                                             {member.userName} ({member.role})
                                         </option>
                                     ))}
