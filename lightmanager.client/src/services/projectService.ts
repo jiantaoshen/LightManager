@@ -6,7 +6,13 @@
 const API_URL = "/api/projects";
 
 export async function getProjects() {
-    const response = await fetch(API_URL);
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(API_URL, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
 
     if (!response.ok) {
         throw new Error(

@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { } from "react-router-dom";
 
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <nav className="flex items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
@@ -30,9 +32,14 @@ export default function Navbar() {
                         </span>
 
                         <button
-                            onClick={logout}
+                            onClick={() => {
+                                logout();
+                                localStorage.removeItem("token");
+                                navigate("/login");
+                            }}
                             className="rounded-md bg-red-500 px-3 py-2 text-white hover:bg-red-600"
                         >
+
                             Logout
                         </button>
                     </div>

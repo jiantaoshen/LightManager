@@ -17,9 +17,10 @@ export default function KanbanBoard() {
 
     // For tasks and kanban
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
+    const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [isEditingProject, setIsEditingProject] = useState(false);
-    
+
+    // For task modal
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -51,26 +52,25 @@ export default function KanbanBoard() {
     }, [projectId]);
 
     // ===================== DRAG LOGIC =====================
-    const handleDragStart = (taskId: number) => {
-        setDraggedTaskId(taskId);
-    };
+    const handleDropColumn = async (newStatus: Status) => {
+        if (!draggedTask) return;
 
-    const handleDropColumn = (status: Status) => {
-        if (draggedTaskId === null) return;
+        const updatedTask = {
+            ...draggedTask,
+            status: newStatus,
+        };
 
-        setTasks((prev) =>
-            prev.map((t) =>
-                t.id === draggedTaskId ? { ...t, status } : t
+        setTasks(tasks =>
+            tasks.map(t =>
+                t.id === updatedTask.id ? updatedTask : t
             )
         );
 
-        setDraggedTaskId(null);
-    };
-
-    const handleDropTask = (targetTaskId: number) => {
-        if (draggedTaskId === null) return;
-
-        setDraggedTaskId(null);
+        await updateTask(
+            Number(projectId),
+            updatedTask.id,
+            updatedTask
+        );
     };
 
 
@@ -354,6 +354,8 @@ export default function KanbanBoard() {
                                         <div
                                             key={task.id}
                                             draggable
+                                            onDragStart={() => setDraggedTask(task)}
+
                                             onClick={() => {
                                                 setSelectedTask(task);
                                                 setIsTaskModalOpen(true);
