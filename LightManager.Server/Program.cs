@@ -37,6 +37,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
@@ -48,6 +49,8 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader();
     });
 });
+
+
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

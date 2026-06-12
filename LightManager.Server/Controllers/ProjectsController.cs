@@ -1,6 +1,7 @@
 ﻿using LightManager.Server.Data;
 using LightManager.Server.DTOs;
 using LightManager.Server.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using System.Security.Claims;
 
 namespace LightManager.Server.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProjectsController : Controller
@@ -24,59 +26,71 @@ namespace LightManager.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProjects()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             var projects = await _context.Projects
+                .Where(p =>
+                    p.CreatedByUserId == userId ||                 // Manager
+                    p.Members.Any(m => m.UserId == userId)        // Member
+                )
+                .Select(p => new ProjectsDTO
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Owner = p.CreatedByUser.UserName,
+                    Status = p.Status,
+                    CreatedAt = p.CreatedAt,
+                    TotalMembers = p.Members.Count()
+                })
                 .ToListAsync();
 
             return Ok(projects);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProject(ProjectDTO dto)
+        public async Task<IActionResult> CreateProject(ProjectDetailDTO dto)
         {
-            try
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("Invalid token");
+
+            var project = new ProjectModel
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Name = dto.Name,
+                Description = dto.Description,
+                Status = "Active",
+                CreatedByUserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
 
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("Invalid token");
+            _context.Projects.Add(project);
+            await _context.SaveChangesAsync();
 
-                var project = new ProjectModel
-                {
-                    Name = dto.Name,
-                    Description = dto.Description,
-                    CreatedByUserId = userId,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.Projects.Add(project);
-                await _context.SaveChangesAsync();
-
-                var creatorAsMember = new ProjectMemberModel
-                {
-                    ProjectId = project.Id,
-                    UserId = userId,
-                    Role = "Manager",
-                    JoinedAt = DateTime.UtcNow
-                };
-
-                _context.ProjectMembers.Add(creatorAsMember);
-                await _context.SaveChangesAsync();
-
-                return Ok(new
-                {
-                    project.Id,
-                    project.Name,
-                    project.Description
-                });
-            }
-            catch (Exception ex)
+            var creatorAsMember = new ProjectMemberModel
             {
-                return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
-            }
+                ProjectId = project.Id,
+                UserId = userId,
+                Role = "Manager",
+                JoinedAt = DateTime.UtcNow
+            };
+
+            _context.ProjectMembers.Add(creatorAsMember);
+            await _context.SaveChangesAsync();
+
+            return Ok(new ProjectDetailDTO
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProject(int id, ProjectDTO dto)
+        public async Task<IActionResult> UpdateProject(int id, ProjectDetailDTO dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -99,11 +113,11 @@ namespace LightManager.Server.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(new
+            return Ok(new ProjectDetailDTO
             {
-                project.Id,
-                project.Name,
-                project.Description
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description
             });
         }
 
@@ -112,7 +126,7 @@ namespace LightManager.Server.Controllers
         {
             var project = await _context.Projects
                 .Where(p => p.Id == projectId)
-                .Select(p => new ProjectDetailsDTO
+                .Select(p => new ProjectDetailDTO
                 {
                     Id = p.Id,
                     Name = p.Name,

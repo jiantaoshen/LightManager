@@ -5,16 +5,6 @@
 
 const API_URL = "/api/projects";
 
-export interface CreateProjectDTO {
-    name: string;
-    description?: string;
-}
-
-export interface UpdateProjectDTO {
-    name: string;
-    description?: string;
-}
-
 export async function getProjects() {
     const response = await fetch(API_URL);
 
@@ -44,7 +34,7 @@ export async function getProject(projectId: number) {
     return await response.json();
 }
 
-export async function createProject(project: CreateProjectDTO) {
+export async function createProject(data: { name: string; description?: string }) {
     const token = localStorage.getItem("token");
 
     const response = await fetch(API_URL, {
@@ -53,7 +43,7 @@ export async function createProject(project: CreateProjectDTO) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(project),
+        body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -63,10 +53,7 @@ export async function createProject(project: CreateProjectDTO) {
     return await response.json();
 }
 
-export async function updateProject(projectId: number, data: {
-    name: string;
-    description: string;
-}) {
+export async function updateProject(projectId: number, data: { name: string; description: string }) {
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${API_URL}/${projectId}`, {

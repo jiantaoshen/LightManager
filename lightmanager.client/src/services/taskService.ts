@@ -1,11 +1,13 @@
+import { type Task } from "../interfaces/ITask";
 const API_URL = "/api/projects";
+
 
 export async function getTasks(projectId: number) {
     const res = await fetch(`${API_URL}/${projectId}/tasks`);
     return res.json();
 }
 
-export async function createTask(projectId: number, task: any) {
+export async function createTask(projectId: number, task: Task) {
     const token = localStorage.getItem("token");
 
     const res = await fetch(`${API_URL}/${projectId}/tasks`, {
@@ -29,7 +31,7 @@ export async function createTask(projectId: number, task: any) {
     return res.json();
 }
 
-export async function updateTask(projectId: number, taskId: number, task: any) {
+export async function updateTask(projectId: number, taskId: number, task: Task) {
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -44,7 +46,13 @@ export async function updateTask(projectId: number, taskId: number, task: any) {
         }
     );
 
-    if (!res.ok) throw new Error("Update task failed");
+    if (!res.ok) {
+        const error = await res.text();
+        console.error("Status:", res.status);
+        console.error("Response:", error);
+        throw new Error(error);
+    }
+
     return res.json();
 }
 

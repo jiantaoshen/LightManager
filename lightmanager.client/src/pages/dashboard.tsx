@@ -6,8 +6,28 @@ import { getProjects, createProject } from "../services/projectService";
 export default function Dashboard() {
     const navigate = useNavigate();
 
+    //===================== HOOKS =================
     const [projects, setProjects] = useState<Project[]>([]);
 
+    //Load projects on page loading
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (!token) return;
+
+        const loadProjects = async () => {
+            try {
+                const data = await getProjects();
+                setProjects(data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        loadProjects();
+    }, []);
+
+    // Color tag based on Status
     const getStatusClass = (status: Project["status"]) => {
         switch (status) {
             case "Active":
@@ -20,21 +40,6 @@ export default function Dashboard() {
                 return "";
         }
     };
-
-    useEffect(() => {
-        const loadProjects = async () => {
-            try {
-                const data =
-                    await getProjects();
-
-                setProjects(data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        loadProjects();
-    }, []);
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
@@ -53,21 +58,16 @@ export default function Dashboard() {
                     <button
                         className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                         onClick={async () => {
-                            try {
-                                const project =
-                                    await createProject({
-                                        name: "New Project",
-                                        description: "",
-                                    });
+                            try
+                            {
+                                const project = await createProject({ name: "New Project", description: "" });
 
-                                navigate(
-                                    `/projects/${project.id}`
-                                );
-                            } catch (error) {
+                                navigate(`/projects/${project.id}`);
+                            }
+                            catch (error)
+                            {
                                 console.error(error);
-                                alert(
-                                    "Failed to create project"
-                                );
+                                alert("Failed to create project");
                             }
                         }}
                     >
@@ -90,7 +90,7 @@ export default function Dashboard() {
                                     Members
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold">
-                                    Due Date
+                                    Created At
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold">
                                     Status
@@ -105,28 +105,24 @@ export default function Dashboard() {
                                     onClick={() => navigate(`/projects/${project.id}`)}
                                     className="cursor-pointer border-t hover:bg-slate-50"
                                 >
-                                    <td className="px-6 py-4 font-medium text-slate-800">
+                                    <td className="px-6 py-4 text-left font-medium text-slate-800">
                                         {project.name}
                                     </td>
 
-                                    <td className="px-6 py-4 text-slate-600">
+                                    <td className="px-6 py-4 text-left text-slate-600">
                                         {project.owner}
                                     </td>
 
-                                    <td className="px-6 py-4 text-slate-600">
-                                        {project.members}
+                                    <td className="px-6 py-4 text-left text-slate-600">
+                                        {project.totalMembers}
                                     </td>
 
-                                    <td className="px-6 py-4 text-slate-600">
-                                        {project.dueDate}
+                                    <td className="px-6 py-4 text-left text-slate-600">
+                                        {new Date(project.createdAt).toLocaleDateString()}
                                     </td>
 
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
-                                                project.status
-                                            )}`}
-                                        >
+                                    <td className="px-6 py-4 text-left">
+                                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(project.status)}`}>
                                             {project.status}
                                         </span>
                                     </td>

@@ -33,7 +33,6 @@ namespace LightManager.Server.Controllers
                     t.ProjectId,
                     t.AssignedUserId,
 
-
                     AssignedUserName =
                         t.AssignedUser != null
                         ? t.AssignedUser.UserName
@@ -45,7 +44,7 @@ namespace LightManager.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTask(int projectId,CreateTaskDTO dto)
+        public async Task<IActionResult> CreateTask(int projectId, CreateTaskDTO dto)
         {
             var task = new TaskModel
             {
@@ -64,15 +63,16 @@ namespace LightManager.Server.Controllers
         }
 
         [HttpPut("{taskId}")]
-        public async Task<IActionResult> UpdateTask(int projectId, int taskId, TaskModel updated)
+        public async Task<IActionResult> UpdateTask(int projectId, int taskId, CreateTaskDTO dto)
         {
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null) return NotFound();
 
-            task.Title = updated.Title;
-            task.Description = updated.Description;
-            task.Status = updated.Status;
-            task.Priority = updated.Priority;
+            task.Title = dto.Title;
+            task.Description = dto.Description;
+            task.Status = dto.Status;
+            task.Priority = dto.Priority;
+            task.AssignedUserId = dto.AssignedUserId;
 
             await _context.SaveChangesAsync();
             return Ok(task);

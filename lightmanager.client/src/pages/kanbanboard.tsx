@@ -8,6 +8,7 @@ import { getTasks, createTask, updateTask, deleteTask } from "../services/taskSe
 export default function KanbanBoard() {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
+    const statuses: Status[] = ["Todo", "In Progress", "Review", "Done"];
 
     // ===================== STATE =====================
     // For project details
@@ -18,26 +19,32 @@ export default function KanbanBoard() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
     const [isEditingProject, setIsEditingProject] = useState(false);
-    const statuses: Status[] = ["Todo", "In Progress", "Review", "Done"];
-
+    
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [assignedUserId, setAssignedUserId] = useState("");
 
     // For members management
     const [members, setMembers] = useState<Member[]>([]);
     const [newEmail, setNewEmail] = useState("");
     const [loadingAdd, setLoadingAdd] = useState(false);
 
-    // ===================== LOAD PROJECT =====================
+
+    // ========== LOAD PROJECT INFO and TASKS  ===============
     useEffect(() => {
         if (!projectId) return;
 
         const load = async () => {
-            const data = await getProject(Number(projectId));
+            try {
 
-            setProject(data);
-            setMembers(data.members);
+                const projectData = await getProject(Number(projectId));
+                setProject(projectData);
+                setMembers(projectData.members);
+
+                const tasksData = await getTasks(Number(projectId));
+                setTasks(tasksData);
+            } catch (err) {
+                console.error(err);
+            }
         };
 
         load();
@@ -66,15 +73,25 @@ export default function KanbanBoard() {
         setDraggedTaskId(null);
     };
 
+
+    const loadTasks = async () => {
+        if (!projectId) return;
+
+        try {
+            const data = await getTasks(Number(projectId));
+
+            setTasks(data);
+        } catch (error) {
+            console.error("Failed to load tasks:", error);
+        }
+    };
+
     // ===================== SAVE PROJECT =====================
     const handleSave = async () => {
         if (!editProject) return;
 
         try {
-            const updated = await updateProject(editProject.id, {
-                name: editProject.name,
-                description: editProject.description
-            });
+            const updated = await updateProject(editProject.id, editProject);
 
             setProject(updated);
             setIsEditingProject(false);
@@ -147,44 +164,6 @@ export default function KanbanBoard() {
             alert("Failed to remove member");
         }
     };
-
-    // ===================== CREATE TASK =====================
-    const handleCreateTask = async () => {
-        const newTask = await createTask(Number(projectId), {
-            title: "New Task",
-            description: "",
-            status: "Todo",
-            priority: "Medium",
-            assignedUserId: assignedUserId,
-        });
-
-        console.log("assignedUserId:", assignedUserId);
-
-        setTasks([...tasks, newTask]);
-    };
-
-    // ===================== UPDATE TASK =====================
-    const handleUpdateTask = async (task: Task) => {
-        const updated = await updateTask(Number(projectId), task.id, task);
-
-        setTasks(prev =>
-            prev.map(t => (t.id === task.id ? updated : t))
-        );
-    };
-
-    // ===================== DELETE TASK =====================
-    const handleDeleteTask = async (taskId: number) => {
-        await deleteTask(Number(projectId), taskId);
-
-        setTasks(prev => prev.filter(t => t.id !== taskId));
-    };
-
-    // ===================== LOAD TASKS =====================
-    useEffect(() => {
-        if (!projectId) return;
-
-        getTasks(Number(projectId)).then(setTasks);
-    }, [projectId]);
 
     // ===================== UI =====================
     return (
@@ -306,9 +285,7 @@ export default function KanbanBoard() {
                                         className="border p-2 flex-1"
                                         placeholder="user@email.com"
                                         value={newEmail}
-                                        onChange={(e) =>
-                                            setNewEmail(e.target.value)
-                                        }
+                                        onChange={(e) =>setNewEmail(e.target.value)}
                                     />
 
                                     <button
@@ -342,16 +319,16 @@ export default function KanbanBoard() {
                     )}
                     </div>
 
-                    <button
-                        onClick={() => {
+                    {/* NEW TASK BUTTON */  }
+                    <button onClick={() => {
                             setSelectedTask({
                                 id: 0,
                                 title: "",
                                 description: "",
                                 status: "Todo",
-                                priority: "Medium",
-                                assignedUserId: undefined,
-                                assignedUserName: undefined
+                                priority: "High",
+                                assignedUserId: null,
+                                assignedUserName: null
                             });
 
                             setIsTaskModalOpen(true);
@@ -372,8 +349,7 @@ export default function KanbanBoard() {
                             >
                                 <h2 className="mb-3 font-bold">{status}</h2>
 
-                                {tasks
-                                    .filter((t) => t.status === status)
+                                {tasks.filter((t) => t.status === status)
                                     .map((task) => (
                                         <div
                                             key={task.id}
@@ -431,6 +407,7 @@ export default function KanbanBoard() {
 
                         <div className="space-y-4">
 
+                            {/* TITLE */ }
                             <div>
                                 <label className="mb-1 block text-sm font-medium">
                                     Title
@@ -439,16 +416,12 @@ export default function KanbanBoard() {
                                 <input
                                     type="text"
                                     value={selectedTask.title}
-                                    onChange={(e) =>
-                                        setSelectedTask({
-                                            ...selectedTask,
-                                            title: e.target.value
-                                        })
-                                    }
+                                    onChange={(e) => setSelectedTask({...selectedTask,title: e.target.value}) }
                                     className="w-full rounded border px-3 py-2"
                                 />
                             </div>
 
+                            {/* DESCRIPTION */ }
                             <div>
                                 <label className="mb-1 block text-sm font-medium">
                                     Description
@@ -457,12 +430,7 @@ export default function KanbanBoard() {
                                 <textarea
                                     rows={4}
                                     value={selectedTask.description || ""}
-                                    onChange={(e) =>
-                                        setSelectedTask({
-                                            ...selectedTask,
-                                            description: e.target.value
-                                        })
-                                    }
+                                    onChange={(e) => setSelectedTask({...selectedTask,description: e.target.value})}
                                     className="w-full rounded border px-3 py-2"
                                 />
                             </div>
@@ -474,12 +442,7 @@ export default function KanbanBoard() {
 
                                 <select
                                     value={selectedTask.priority}
-                                    onChange={(e) =>
-                                        setSelectedTask({
-                                            ...selectedTask,
-                                            priority: e.target.value as "Low" | "Medium" | "High"
-                                        })
-                                    }
+                                    onChange={(e) =>setSelectedTask({...selectedTask, priority: e.target.value as "Low" | "Medium" | "High"})}
                                     className="w-full rounded border px-3 py-2"
                                 >
                                     <option value="Low">Low</option>
@@ -495,19 +458,11 @@ export default function KanbanBoard() {
 
                                 <select
                                     value={selectedTask.status}
-                                    onChange={(e) =>
-                                        setSelectedTask({
-                                            ...selectedTask,
-                                            status: e.target.value as Status
-                                        })
-                                    }
+                                    onChange={(e) => setSelectedTask({...selectedTask, status: e.target.value as Status})}
                                     className="w-full rounded border px-3 py-2"
                                 >
                                     {statuses.map((status) => (
-                                        <option
-                                            key={status}
-                                            value={status}
-                                        >
+                                        <option key={status} value={status}>
                                             {status}
                                         </option>
                                     ))}
@@ -520,15 +475,15 @@ export default function KanbanBoard() {
                                 </label>
 
                                 <select
-                                    value={assignedUserId}
-                                    onChange={(e) =>setAssignedUserId(e.target.value)}
+                                    value={selectedTask.assignedUserId}
+                                    onChange={(e) => {  
+                                        setSelectedTask({ ...selectedTask, assignedUserId: e.target.value === "" ? null : e.target.value });
+                                    }}
                                     className="w-full rounded border p-2"
                                 >
-                                    <option value="">
-                                        Unassigned
-                                    </option>
+                                    <option value="">Unassigned</option>
 
-                                    {project?.members.map((member) => (
+                                    {(project?.members ?? []).map((member) => (
                                         <option key={member.userId} value={member.userId}>
                                             {member.userName} ({member.role})
                                         </option>
@@ -538,64 +493,34 @@ export default function KanbanBoard() {
                         </div>
 
                         <div className="mt-6 flex justify-between">
-
+                            {/* Save button that create task if the task does not exits, otherwise edit task*/ }
                             <button
                                 onClick={async () => {
-                                    if (selectedTask.id === 0) {
-                                        const created =
-                                            await createTask(
-                                                Number(projectId),
-                                                selectedTask
-                                            );
-
-                                        setTasks((prev) => [
-                                            ...prev,
-                                            created
-                                        ]);
-                                    } else {
-                                        const updated =
-                                            await updateTask(
-                                                Number(projectId),
-                                                selectedTask.id,
-                                                selectedTask
-                                            );
-
-                                        setTasks((prev) =>
-                                            prev.map((t) =>
-                                                t.id === updated.id
-                                                    ? updated
-                                                    : t
-                                            )
-                                        );
-                                    }
-
+                                    if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
+                                    else await updateTask(Number(projectId), selectedTask.id, selectedTask);
+                                    
+                                    await loadTasks();
                                     setIsTaskModalOpen(false);
                                     setSelectedTask(null);
                                 }}
+
                                 className="rounded bg-green-600 px-4 py-2 text-white"
                             >
                                 Save
                             </button>
 
+                            {/* Delete button that shows only when you click on the task*/ }
                             {selectedTask.id !== 0 && (
                                 <button
                                     onClick={async () => {
-                                        await deleteTask(
-                                            Number(projectId),
-                                            selectedTask.id
-                                        );
+                                        await deleteTask(Number(projectId), selectedTask.id);
 
-                                        setTasks((prev) =>
-                                            prev.filter(
-                                                (t) =>
-                                                    t.id !==
-                                                    selectedTask.id
-                                            )
-                                        );
+                                        await loadTasks();
 
                                         setIsTaskModalOpen(false);
                                         setSelectedTask(null);
                                     }}
+
                                     className="rounded bg-red-600 px-4 py-2 text-white"
                                 >
                                     Delete

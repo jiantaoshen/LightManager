@@ -4,8 +4,9 @@ export interface Project {
     description: string | null;
     owner: string;
     status: "Active" | "Completed" | "Archived";
-    members: Member[];
-    dueDate: string;
+    totalMembers?: number;
+    members?: Member[];
+    createdAt?: Date;
 }
 
 export interface Member {

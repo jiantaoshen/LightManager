@@ -15,7 +15,7 @@ namespace LightManager.Server.Models
 
         public string CreatedByUserId { get; set; } = string.Empty;
 
-        public ApplicationUser CreatedByUser { get; set; } = null!;
+        public ApplicationUser? CreatedByUser { get; set; }
 
         public ICollection<ProjectMemberModel> Members { get; set; } = new List<ProjectMemberModel>();
 
