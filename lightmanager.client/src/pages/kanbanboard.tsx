@@ -263,8 +263,7 @@ export default function KanbanBoard() {
 
                             {/* ADD MEMBER INPUT */}
                             <div className="flex gap-2 mb-4">
-                                <input
-                                    type="email"
+                                <input type="email"
                                     className="border p-2 flex-1"
                                     placeholder="user@email.com"
                                     value={newEmail}
@@ -315,9 +314,7 @@ export default function KanbanBoard() {
                                 </button>
 
                                 <button
-                                    onClick={() =>
-                                        setIsEditingProject(false)
-                                    }
+                                    onClick={() => setIsEditingProject(false)}
                                     className="bg-gray-300 px-4 py-2 rounded"
                                 >
                                     Cancel
@@ -359,8 +356,7 @@ export default function KanbanBoard() {
 
                                 {tasks.filter((t) => t.status === status)
                                     .map((task) => (
-                                        <div
-                                            key={task.id}
+                                        <div key={task.id}
                                             draggable
                                             onDragStart={() => setDraggedTask(task)}
 
@@ -500,14 +496,13 @@ export default function KanbanBoard() {
 
                         <div className="mt-6 flex justify-between">
                             {/* Save button that create task if the task does not exits, otherwise edit task*/ }
-                            <button
-                                onClick={async () => {
-                                    if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
-                                    else await updateTask(Number(projectId), selectedTask.id, selectedTask);
+                            <button onClick={async () => {
+                                if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
+                                else await updateTask(Number(projectId), selectedTask.id, selectedTask);
                                     
-                                    await loadTasks();
-                                    setIsTaskModalOpen(false);
-                                    setSelectedTask(null);
+                                await loadTasks();
+                                setIsTaskModalOpen(false);
+                                setSelectedTask(null);
                                 }}
 
                                 className="rounded bg-green-600 px-4 py-2 text-white"
@@ -517,14 +512,13 @@ export default function KanbanBoard() {
 
                             {/* Delete button that shows only when you click on the task*/ }
                             {selectedTask.id !== 0 && (
-                                <button
-                                    onClick={async () => {
-                                        await deleteTask(Number(projectId), selectedTask.id);
+                                <button onClick={async () => {
+                                    await deleteTask(Number(projectId), selectedTask.id);
 
-                                        await loadTasks();
+                                    await loadTasks();
 
-                                        setIsTaskModalOpen(false);
-                                        setSelectedTask(null);
+                                    setIsTaskModalOpen(false);
+                                    setSelectedTask(null);
                                     }}
 
                                     className="rounded bg-red-600 px-4 py-2 text-white"
