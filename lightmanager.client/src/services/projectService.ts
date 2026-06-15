@@ -59,7 +59,13 @@ export async function createProject(data: { name: string; description?: string }
     return await response.json();
 }
 
-export async function updateProject(projectId: number, data: { name: string; description: string }) {
+export async function updateProject(projectId: number, data: {
+        name: string;
+        description: string;
+        status: "Active" | "Archived";
+        members: { userId: string; userName: string;role: string;}[];
+    }
+) {
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${API_URL}/${projectId}`, {
@@ -95,42 +101,4 @@ export async function deleteProject(projectId: number) {
     }
 
     return await response.json();
-}
-
-export async function addMember(projectId: number, email: string) {
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(`${API_URL}/${projectId}/members`,{
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({ email })
-        }
-    );
-
-    if (!res.ok) {
-        throw new Error(await res.text());
-    }
-
-    return await res.json();
-}
-
-export async function removeMember(projectId: number, userId: string) {
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(`${API_URL}/${projectId}/members/${userId}`,{
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }
-    );
-
-    if (!res.ok) {
-        throw new Error(await res.text());
-    }
-
-    return true;
 }
