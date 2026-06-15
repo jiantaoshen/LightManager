@@ -7,7 +7,7 @@
 
         public string Owner { get; set; }
 
-        public string Status { get; set; } = "Active";
+        public string Status { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

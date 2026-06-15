@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { getProject, updateProject, deleteProject, addMember, removeMember } from "../services/projectService";
+import { getProject, updateProject, deleteProject } from "../services/projectService";
 import { useParams, useNavigate } from "react-router-dom";
 import { type Task, type Status } from "../interfaces/ITask";
 import { type Project, type Member } from "../interfaces/IProject";
 import { getTasks, createTask, updateTask, deleteTask } from "../services/taskService";
+import { findUserByEmail } from "../services/userService";
 
 export default function KanbanBoard() {
     const navigate = useNavigate();
@@ -12,8 +13,9 @@ export default function KanbanBoard() {
 
     // ===================== STATE =====================
     // For project details
-    const [project, setProject] = useState<Project | null>(null);
-    const [editProject, setEditProject] = useState<Project | null>(null);
+    const [project, setProject] = useState<Project | null>(null); //For display project details normal in header
+    const [editProject, setEditProject] = useState<Project | null>(null); //For display project detail in edit mode in header
+
 
     // For tasks and kanban
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -25,10 +27,10 @@ export default function KanbanBoard() {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     // For members management
-    const [members, setMembers] = useState<Member[]>([]);
-    const [newEmail, setNewEmail] = useState("");
-    const [loadingAdd, setLoadingAdd] = useState(false);
-
+    const [members, setMembers] = useState<Member[]>([]); //For display members normal in header
+    const [editMembers, setEditMembers] = useState<Member[]>([]); //For display members in edit mode in header
+    const [newEmail, setNewEmail] = useState(""); //For email input in add member feature
+    const [loadingAdd, setLoadingAdd] = useState(false); 
 
     // ========== LOAD PROJECT INFO and TASKS  ===============
     useEffect(() => {
@@ -39,10 +41,15 @@ export default function KanbanBoard() {
 
                 const projectData = await getProject(Number(projectId));
                 setProject(projectData);
+                setEditProject(projectData);
+
                 setMembers(projectData.members);
+                setEditMembers(projectData.members);
 
                 const tasksData = await getTasks(Number(projectId));
                 setTasks(tasksData);
+
+                
             } catch (err) {
                 console.error(err);
             }
@@ -55,24 +62,12 @@ export default function KanbanBoard() {
     const handleDropColumn = async (newStatus: Status) => {
         if (!draggedTask) return;
 
-        const updatedTask = {
-            ...draggedTask,
-            status: newStatus,
-        };
+        const updatedTask = {...draggedTask,status: newStatus,};
 
-        setTasks(tasks =>
-            tasks.map(t =>
-                t.id === updatedTask.id ? updatedTask : t
-            )
-        );
+        setTasks(tasks => tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
 
-        await updateTask(
-            Number(projectId),
-            updatedTask.id,
-            updatedTask
-        );
+        await updateTask(Number(projectId),updatedTask.id,updatedTask);
     };
-
 
     const loadTasks = async () => {
         if (!projectId) return;
@@ -91,7 +86,8 @@ export default function KanbanBoard() {
         if (!editProject) return;
 
         try {
-            const updated = await updateProject(editProject.id, editProject);
+            const updated = await updateProject(editProject.id, {...editProject,members: editMembers});
+
 
             setProject(updated);
             setIsEditingProject(false);
@@ -101,6 +97,7 @@ export default function KanbanBoard() {
             alert("Failed to update project");
         }
     };
+
 
     // ===================== DELETE PROJECT =====================
     const handleDelete = async () => {
@@ -118,52 +115,6 @@ export default function KanbanBoard() {
         }
     };
 
-    // ---------------- ADD MEMBER ----------------
-    const handleAddMember = async () => {
-        if (!project) {
-            console.log("NO PROJECT");
-            return;
-        }
-
-        if (!newEmail.trim()) {
-            console.log("EMPTY EMAIL");
-            return;
-        }
-
-        try {
-            setLoadingAdd(true);
-
-            console.log("CALL API:", newEmail);
-
-            const added = await addMember(project.id, newEmail);
-
-            console.log("ADDED MEMBER:", added);
-
-            setMembers((prev) => [...prev, added]);
-            setNewEmail("");
-        } catch (err) {
-            console.error("ADD MEMBER ERROR:", err);
-            alert("Failed to add member (check console)");
-        } finally {
-            setLoadingAdd(false);
-        }
-    };
-
-    // ---------------- REMOVE MEMBER ----------------
-    const handleRemoveMember = async (userId: string) => {
-        if (!project) return;
-
-        try {
-            await removeMember(project.id, userId);
-
-            setMembers(prev =>
-                prev.filter(m => m.userId !== userId)
-            );
-        } catch (err) {
-            console.error(err);
-            alert("Failed to remove member");
-        }
-    };
 
     // ===================== UI =====================
     return (
@@ -177,20 +128,26 @@ export default function KanbanBoard() {
                     {!isEditingProject ? (
                         <div className="flex items-start justify-between">
                             <div>
-                                <h1 className="text-3xl font-bold">
-                                    {project?.name}
-                                </h1>
+                                    <div className="flex items-center gap-3">
+                                        <h1> {project?.name} </h1>
 
-                                <p className="mt-2 text-slate-500">
-                                    {project?.description}
-                                </p>
+                                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${project?.status === "Active"
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-slate-100 text-slate-700"
+                                                }`}
+                                        >
+                                            {project?.status}
+                                        </span>
+                                     </div>
+
+                                <p> {project?.description} </p>
 
                                 {/* MEMBERS */}
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     {members.map((m) => (
                                         <div
                                             key={m.userId}
-                                            className={`px-3 py-1 rounded-full text-sm ${m.role === "Manager"
+                                            className={`px-3 py-1 rounded-full text-sm ${m.role === "Owner" || m.role === "Admin"
                                                     ? "bg-red-100 text-red-700"
                                                     : "bg-blue-100 text-blue-700"
                                                 }`}
@@ -227,75 +184,126 @@ export default function KanbanBoard() {
                             <input
                                 className="w-full border p-2 rounded"
                                 value={editProject?.name || ""}
-                                onChange={(e) =>
-                                    setEditProject((prev) =>
-                                        prev
-                                            ? { ...prev, name: e.target.value }
-                                            : prev
-                                    )
-                                }
+                                onChange={(e) => setEditProject((prev) => prev ? { ...prev, name: e.target.value } : prev)}
                             />
 
                             {/* DESCRIPTION */}
                             <textarea
                                 className="w-full border p-2 rounded"
                                 value={editProject?.description || ""}
-                                onChange={(e) =>
-                                    setEditProject((prev) =>
-                                        prev
-                                            ? {
-                                                ...prev,
-                                                description: e.target.value
-                                            }
-                                            : prev
-                                    )
-                                }
+                                onChange={(e) => setEditProject((prev) =>prev? {...prev, description: e.target.value}: prev)}
                             />
 
-                                {/* MEMBERS */}
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                    {members.map((m) => (
-                                        <span
-                                            key={m.userId}
-                                            className={`px-3 py-1 rounded-full flex items-center gap-2 ${m.role === "Manager"
-                                                ? "bg-red-100 text-red-700"
-                                                : "bg-blue-100 text-blue-700"
-                                                }`}
-                                        >
-                                            {m.userName} ({m.role})
+                            {/* STATUS */}
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium">
+                                    Status
+                                </label>
 
-                                            {m.role !== "Manager" && (
-                                                <button
-                                                    onClick={() =>
-                                                        handleRemoveMember(m.userId)
-                                                    }
-                                                    className="text-red-500"
+                                <select
+                                    value={editProject?.status ?? "Active"}
+                                    onChange={(e) =>
+                                        setEditProject(prev => prev ? { ...prev, status: e.target.value as "Active" | "Archived" } : prev)
+                                    }
+                                    className="rounded border p-2"
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="Archived">Archived</option>
+                                </select>
+                            </div>
+
+                                    {/* MEMBERS */}
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {editMembers.map((m) => (
+                                            <span
+                                                key={m.userId}
+                                                className={`px-3 py-1 rounded-full flex items-center gap-2 ${m.role === "Owner"
+                                                        ? "bg-red-100 text-red-700"
+                                                        : "bg-blue-100 text-blue-700"
+                                                    }`}
+                                            >
+                                                {m.userName}
+
+                                                {/* CHANGE ROLE */}
+                                                <select
+                                                    value={m.role}
+                                                    disabled={m.role === "Owner"}
+                                                    onChange={(e) => {
+                                                        const newRole = e.target.value;
+
+                                                        setEditMembers(prev =>
+                                                            prev.map(member =>
+                                                                member.userId === m.userId
+                                                                    ? { ...member, role: newRole }
+                                                                    : member
+                                                            )
+                                                        );
+                                                    }}
+                                                    className="rounded border p-2 disabled:bg-slate-100 disabled:text-slate-500"
                                                 >
-                                                    ×
-                                                </button>
-                                            )}
-                                        </span>
-                                    ))}
-                                </div>
+                                                    <option value="Admin">Admin</option>
+                                                    <option value="Member">Member</option>
+                                                </select>
 
-                                {/* ADD MEMBER INPUT */}
-                                <div className="flex gap-2 mb-4">
-                                    <input
-                                        type="email"
-                                        className="border p-2 flex-1"
-                                        placeholder="user@email.com"
-                                        value={newEmail}
-                                        onChange={(e) =>setNewEmail(e.target.value)}
-                                    />
+                                                {m.role !== "Owner" && (
+                                                    <button
+                                                        className="text-red-500"
+                                                        onClick={() => {
+                                                            setEditMembers(prev =>
+                                                                prev.filter(member => member.userId !== m.userId)
+                                                            );
+                                                        }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
+                                            </span>
+                                        ))}
+                                    </div>
 
-                                    <button
-                                        onClick={handleAddMember}
-                                        disabled={loadingAdd}
-                                        className="bg-green-600 text-white px-3 rounded"
-                                    >
-                                        {loadingAdd ? "..." : "Add"}
-                                    </button>
-                                </div>
+                                    {/* ADD MEMBER INPUT */}
+                                    <div className="flex gap-2 mb-4">
+                                        <input
+                                            type="email"
+                                            className="border p-2 flex-1"
+                                            placeholder="user@email.com"
+                                            value={newEmail}
+                                            onChange={(e) => setNewEmail(e.target.value)}
+                                        />
+
+                                        <button
+                                            onClick={async () => {
+                                                if (!newEmail.trim()) return;
+
+                                                setLoadingAdd(true);
+
+                                                const user = await findUserByEmail(newEmail);
+
+                                                if (user == null) return; 
+
+                                                const newMember = {
+                                                    userId: user.id,
+                                                    userName: user.userName,
+                                                    email: user.email,
+                                                    role: "Member"
+                                                };
+
+                                                setEditMembers(prev => {
+                                                    const exists = prev.some(m => m.userId === user.id);
+                                                    if (exists) return prev;
+
+                                                    return [...prev, newMember];
+                                                });
+
+                                                setNewEmail("");
+                                                setLoadingAdd(false);
+                                            }}
+                                            disabled={loadingAdd}
+                                            className="bg-green-600 text-white px-3 rounded"
+                                        >
+                                            {loadingAdd ? "..." : "Add"}
+                                        </button>
+                                    </div>
 
                             {/* BUTTONS */}
                             <div className="flex gap-2">
@@ -384,10 +392,6 @@ export default function KanbanBoard() {
                                                         }`}
                                                 >
                                                     {task.priority}
-                                                </span>
-
-                                                <span className="text-xs text-slate-400">
-                                                    #{task.id}
                                                 </span>
                                             </div>
                                         </div>

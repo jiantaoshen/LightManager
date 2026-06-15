@@ -59,7 +59,13 @@ export async function createProject(data: { name: string; description?: string }
     return await response.json();
 }
 
-export async function updateProject(projectId: number, data: { name: string; description: string }) {
+export async function updateProject(projectId: number, data: {
+        name: string;
+        description: string;
+        status: "Active" | "Archived";
+        members: { userId: string; userName: string;role: string;}[];
+    }
+) {
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${API_URL}/${projectId}`, {
@@ -97,7 +103,7 @@ export async function deleteProject(projectId: number) {
     return await response.json();
 }
 
-export async function addMember(projectId: number, email: string) {
+export async function addMember(projectId: number, email: string, role: string) {
     const token = localStorage.getItem("token");
 
     const res = await fetch(`${API_URL}/${projectId}/members`,{
@@ -106,7 +112,7 @@ export async function addMember(projectId: number, email: string) {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, role })
         }
     );
 
@@ -115,6 +121,27 @@ export async function addMember(projectId: number, email: string) {
     }
 
     return await res.json();
+}
+
+export async function updateMemberRole(projectId: number, userId: string, role: string) {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_URL}/${projectId}/members/${userId}/role`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ role }),
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to update member role");
+    }
+
+    return response.json();
 }
 
 export async function removeMember(projectId: number, userId: string) {
@@ -133,4 +160,6 @@ export async function removeMember(projectId: number, userId: string) {
     }
 
     return true;
+
+
 }

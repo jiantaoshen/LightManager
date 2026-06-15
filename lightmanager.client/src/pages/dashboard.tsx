@@ -32,8 +32,6 @@ export default function Dashboard() {
         switch (status) {
             case "Active":
                 return "bg-green-100 text-green-700";
-            case "Completed":
-                return "bg-blue-100 text-blue-700";
             case "Archived":
                 return "bg-gray-100 text-gray-700";
             default:

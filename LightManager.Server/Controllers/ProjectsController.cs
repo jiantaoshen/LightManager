@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LightManager.Server.Controllers
 {
@@ -33,8 +34,8 @@ namespace LightManager.Server.Controllers
 
             var projects = await _context.Projects
                 .Where(p =>
-                    p.CreatedByUserId == userId ||                 // Manager
-                    p.Members.Any(m => m.UserId == userId)        // Member
+                    p.CreatedByUserId == userId ||                 // Owner
+                    p.Members.Any(m => m.UserId == userId)        // Members
                 )
                 .Select(p => new ProjectsDTO
                 {
@@ -86,38 +87,94 @@ namespace LightManager.Server.Controllers
                 Id = project.Id,
                 Name = project.Name,
                 Description = project.Description,
+                Status = project.Status
             });
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProject(int id, ProjectDetailDTO dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
             var project = await _context.Projects
                 .Include(p => p.Members)
+                .Include(p => p.CreatedByUser)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
                 return NotFound();
 
-            // optional security: only manager/admin can edit
-            var currentUserRole = project.Members
-                .FirstOrDefault(m => m.UserId == userId)?.Role;
-
-            if (currentUserRole != "Manager")
-                return Forbid();
-
+            // update project
             project.Name = dto.Name;
             project.Description = dto.Description;
+            project.Status = dto.Status;
+
+            // SAFETY: prevent null crash
+            dto.Members ??= new List<ProjectMemberDTO>();
+
+            // load existing members
+            var existing = await _context.ProjectMembers
+                .Where(m => m.ProjectId == id)
+                .ToListAsync();
+
+            // UPDATE + REMOVE
+            foreach (var member in existing)
+            {
+                if (member.Role == "Owner")
+                    continue;
+
+                var updated = dto.Members
+                    .FirstOrDefault(x => x.UserId == member.UserId);
+
+                if (updated == null)
+                {
+                    _context.ProjectMembers.Remove(member);
+                }
+                else
+                {
+                    member.Role = updated.Role;
+                }
+            }
+
+            // ADD NEW MEMBERS
+            foreach (var dtoMember in dto.Members)
+            {
+                var exists = existing.Any(m => m.UserId == dtoMember.UserId);
+
+                if (!exists)
+                {
+                    _context.ProjectMembers.Add(new ProjectMemberModel
+                    {
+                        ProjectId = id,
+                        UserId = dtoMember.UserId,
+                        Role = dtoMember.Role,
+                        JoinedAt = DateTime.UtcNow
+                    });
+                }
+            }
 
             await _context.SaveChangesAsync();
 
+            // reload members safely
+            var updatedProject = await _context.Projects
+                .Include(p => p.Members)
+                .ThenInclude(m => m.User)
+                .Include(p => p.CreatedByUser)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             return Ok(new ProjectDetailDTO
             {
-                Id = project.Id,
-                Name = project.Name,
-                Description = project.Description
+                Id = updatedProject!.Id,
+                Name = updatedProject.Name,
+                Description = updatedProject.Description,
+                Status = updatedProject.Status,
+                CreatedAt = updatedProject.CreatedAt,
+                Owner = updatedProject.CreatedByUser?.UserName ?? "",
+
+                Members = updatedProject.Members.Select(m => new ProjectMemberDTO
+                {
+                    UserId = m.UserId,
+                    UserName = m.User?.UserName ?? "",
+                    Role = m.Role
+                }).ToList()
             });
         }
 
@@ -172,44 +229,6 @@ namespace LightManager.Server.Controllers
             return Ok(new { message = "Project deleted" });
         }
 
-        [HttpPost("{projectId}/members")]
-        public async Task<IActionResult> AddMember(int projectId, AddMemberDTO dto)
-        {
-            var project = await _context.Projects
-                .Include(p => p.Members)
-                .FirstOrDefaultAsync(p => p.Id == projectId);
-
-            if (project == null)
-                return NotFound("Project not found");
-
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-
-            if (user == null)
-                return BadRequest("User not found");
-
-            var exists = await _context.ProjectMembers
-                .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == user.Id);
-
-            if (exists)
-                return BadRequest("User already in project");
-
-            var member = new ProjectMemberModel
-            {
-                ProjectId = projectId,
-                UserId = user.Id,
-                Role = "Member"
-            };
-
-            _context.ProjectMembers.Add(member);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                userId = user.Id,
-                userName = user.UserName,
-                role = "Member"
-            });
-        }
 
         [HttpDelete("{projectId}/members/{userId}")]
         public async Task<IActionResult> RemoveMember(int projectId, string userId)
@@ -231,5 +250,9 @@ namespace LightManager.Server.Controllers
 
             return Ok();
         }
+
+
+
+
     }
 }
