@@ -38,7 +38,6 @@ export default function KanbanBoard() {
 
         const load = async () => {
             try {
-
                 const projectData = await getProject(Number(projectId));
                 setProject(projectData);
                 setEditProject(projectData);

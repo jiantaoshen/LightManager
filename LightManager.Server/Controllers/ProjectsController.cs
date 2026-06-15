@@ -228,31 +228,5 @@ namespace LightManager.Server.Controllers
 
             return Ok(new { message = "Project deleted" });
         }
-
-
-        [HttpDelete("{projectId}/members/{userId}")]
-        public async Task<IActionResult> RemoveMember(int projectId, string userId)
-        {
-            var member = await _context.ProjectMembers
-                .FirstOrDefaultAsync(x =>
-                    x.ProjectId == projectId &&
-                    x.UserId == userId);
-
-            if (member == null)
-                return NotFound("Member not found");
-
-            // prevent removing manager if you want
-            if (member.Role == "Manager")
-                return BadRequest("Cannot remove manager");
-
-            _context.ProjectMembers.Remove(member);
-            await _context.SaveChangesAsync();
-
-            return Ok();
-        }
-
-
-
-
     }
 }
