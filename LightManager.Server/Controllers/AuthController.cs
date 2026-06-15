@@ -56,10 +56,10 @@ public class AuthController : ControllerBase
 
         var claims = new[]
         {
-        new Claim(ClaimTypes.NameIdentifier, user.Id),
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim(ClaimTypes.Name, user.UserName)
-    };
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.UserName)
+        };
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -77,8 +77,9 @@ public class AuthController : ControllerBase
         return Ok(new
         {
             token = new JwtSecurityTokenHandler().WriteToken(token),
-            fullName = user.UserName,
-            email = user.Email
+            fullName = user.UserName,    
+            email = user.Email,
+            userId = user.Id
         });
     }
 }

@@ -40,6 +40,7 @@ export default function Login() {
             login({
                 fullName: result.fullName,
                 email: result.email,
+                userId: result.userId
             });
 
             navigate("/"); // redirect after login

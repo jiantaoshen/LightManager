@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { type Project } from "../interfaces/IProject";
 import { useState, useEffect } from "react";
 import { getProjects, createProject } from "../services/projectService";
+import ProjectStatusBadge from '../components/StatusBadge';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -26,18 +27,6 @@ export default function Dashboard() {
 
         loadProjects();
     }, []);
-
-    // Color tag based on Status
-    const getStatusClass = (status: Project["status"]) => {
-        switch (status) {
-            case "Active":
-                return "bg-green-100 text-green-700";
-            case "Archived":
-                return "bg-gray-100 text-gray-700";
-            default:
-                return "";
-        }
-    };
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
@@ -120,9 +109,7 @@ export default function Dashboard() {
                                     </td>
 
                                     <td className="px-6 py-4 text-left">
-                                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(project.status)}`}>
-                                            {project.status}
-                                        </span>
+                                        <ProjectStatusBadge status={project.status} />
                                     </td>
                                 </tr>
                             ))}
