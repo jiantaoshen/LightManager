@@ -75,7 +75,7 @@ namespace LightManager.Server.Controllers
             {
                 ProjectId = project.Id,
                 UserId = userId,
-                Role = "Manager",
+                Role = "Owner",
                 JoinedAt = DateTime.UtcNow
             };
 

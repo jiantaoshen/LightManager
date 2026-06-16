@@ -145,6 +145,24 @@ namespace LightManager.Server.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("LightManager.Server.Models.TaskAssigneeModel", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TaskId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TaskAssignees");
+                });
+
             modelBuilder.Entity("LightManager.Server.Models.TaskModel", b =>
                 {
                     b.Property<int>("Id")
@@ -153,13 +171,14 @@ namespace LightManager.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AssignedUserId")
+                    b.Property<string>("ApplicationUserId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DueDate")
@@ -182,7 +201,7 @@ namespace LightManager.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedUserId");
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("ProjectId");
 
@@ -331,13 +350,13 @@ namespace LightManager.Server.Migrations
                     b.HasOne("LightManager.Server.Models.ProjectModel", "Project")
                         .WithMany("Members")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("LightManager.Server.Data.ApplicationUser", "User")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Project");
@@ -356,19 +375,36 @@ namespace LightManager.Server.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("LightManager.Server.Models.TaskAssigneeModel", b =>
+                {
+                    b.HasOne("LightManager.Server.Models.TaskModel", "Task")
+                        .WithMany("AssignedUsers")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("LightManager.Server.Data.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LightManager.Server.Models.TaskModel", b =>
                 {
-                    b.HasOne("LightManager.Server.Data.ApplicationUser", "AssignedUser")
+                    b.HasOne("LightManager.Server.Data.ApplicationUser", null)
                         .WithMany("AssignedTasks")
-                        .HasForeignKey("AssignedUserId");
+                        .HasForeignKey("ApplicationUserId");
 
                     b.HasOne("LightManager.Server.Models.ProjectModel", "Project")
                         .WithMany("Tasks")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedUser");
 
                     b.Navigation("Project");
                 });
@@ -438,6 +474,11 @@ namespace LightManager.Server.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("LightManager.Server.Models.TaskModel", b =>
+                {
+                    b.Navigation("AssignedUsers");
                 });
 #pragma warning restore 612, 618
         }

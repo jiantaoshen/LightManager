@@ -16,6 +16,8 @@ namespace LightManager.Server.Data
 
         public DbSet<TaskModel> Tasks => Set<TaskModel>();
 
+        public DbSet<TaskAssigneeModel> TaskAssignees => Set<TaskAssigneeModel>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -27,13 +29,28 @@ namespace LightManager.Server.Data
                 .HasOne(pm => pm.Project)
                 .WithMany(p => p.Members)
                 .HasForeignKey(pm => pm.ProjectId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ProjectMemberModel>()
                 .HasOne(pm => pm.User)
                 .WithMany(u => u.ProjectMembers)
                 .HasForeignKey(pm => pm.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<TaskAssigneeModel>()
+                .HasKey(x => new { x.TaskId, x.UserId });
+
+            modelBuilder.Entity<TaskAssigneeModel>()
+                .HasOne(x => x.Task)
+                .WithMany(t => t.AssignedUsers)
+                .HasForeignKey(x => x.TaskId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<TaskAssigneeModel>()
+                .HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace LightManager.Server.Models
 
         public string Title { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         public string Status { get; set; } = "ToDo";
 
@@ -18,12 +18,13 @@ namespace LightManager.Server.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Foreign key to the project this task belongs to
         public int ProjectId { get; set; }
 
         public ProjectModel Project { get; set; } = null!;
 
-        public string? AssignedUserId { get; set; }
 
-        public ApplicationUser? AssignedUser { get; set; }
+        //Multiple users can be assigned to a task, so we use a many-to-many relationship
+        public List<TaskAssigneeModel> AssignedUsers { get; set; } = new(); 
     }
 }
