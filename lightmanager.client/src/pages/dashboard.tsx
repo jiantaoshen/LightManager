@@ -105,7 +105,7 @@ export default function Dashboard() {
                                     </td>
 
                                     <td className="px-6 py-4 text-left text-slate-600">
-                                        {new Date(project.createdAt).toLocaleDateString()}
+                                        {new Date(project.createdAt).toLocaleDateString("sv-SE")}
                                     </td>
 
                                     <td className="px-6 py-4 text-left">

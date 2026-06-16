@@ -6,7 +6,11 @@ export interface Task {
     description?: string;
     status: Status;
     priority: "Low" | "Medium" | "High";
+    assignedUsers: TaskAssignee[];
+    dueDate?: Date;
+}
 
-    assignedUserId?: string;
-    assignedUserName?: string;
+export interface TaskAssignee {
+    userId: string;
+    userName: string;
 }
