@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { type Project } from "../interfaces/IProject";
 import { useState, useEffect } from "react";
 import { getProjects, createProject } from "../services/projectService";
-import ProjectStatusBadge from '../components/StatusBadge';
+import Badge from "../components/Badge";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -109,7 +109,9 @@ export default function Dashboard() {
                                     </td>
 
                                     <td className="px-6 py-4 text-left">
-                                        <ProjectStatusBadge status={project.status} />
+                                        <Badge variant={project.status === "Active" ? "active" : "default"}>
+                                            {project.status}
+                                        </Badge>
                                     </td>
                                 </tr>
                             ))}

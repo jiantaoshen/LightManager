@@ -5,8 +5,7 @@ import { type Task, type Status } from "../interfaces/ITask";
 import { type Project, type Member } from "../interfaces/IProject";
 import { getTasks, createTask, updateTask, deleteTask } from "../services/taskService";
 import { findUserByEmail } from "../services/userService";
-
-import ProjectStatusBadge  from '../components/StatusBadge';
+import Badge from "../components/Badge";
 
 export default function KanbanBoard() {
     const navigate = useNavigate();
@@ -102,7 +101,6 @@ export default function KanbanBoard() {
         }
     };
 
-
     // ===================== DELETE PROJECT =====================
     const handleDelete = async () => {
         if (!project) return;
@@ -118,26 +116,6 @@ export default function KanbanBoard() {
             alert("Failed to delete project");
         }
     };
-
-    //===================== Member Badge =====================
-    function getRoleBadgeClass(role: string) {
-        const base = "px-3 py-1 rounded-full items-center gap-2";
-
-        switch (role) {
-            case "Owner":
-                return `${base} bg-red-100 text-red-700`;
-
-            case "Admin":
-                return `${base} bg-orange-100 text-orange-700`;
-
-            case "Member":
-                return `${base} bg-blue-100 text-blue-700`;
-
-            default:
-                return `${base} bg-slate-100 text-slate-700`;
-        }
-    }
-
 
     // ===================== UI =====================
     return (
@@ -155,7 +133,9 @@ export default function KanbanBoard() {
                                 <div className="flex items-center gap-3">
                                     <h1> {project?.name} </h1>
 
-                                    <ProjectStatusBadge status={project?.status} />
+                                    <Badge variant={project?.status === "Active" ? "active" : "default"}>
+                                        {project?.status}
+                                    </Badge>
                                 </div>
 
                                 {/* Description */}
@@ -166,9 +146,9 @@ export default function KanbanBoard() {
                                 {/* Members */}
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     {members.map((m) => (
-                                        <div key={m.userId} className={getRoleBadgeClass(m.role)}>
+                                        <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
                                             {m.userName} ({m.role})
-                                        </div>
+                                        </Badge>
                                     ))}
                                 </div>
                             </div>
@@ -226,10 +206,8 @@ export default function KanbanBoard() {
 
                             {/* MEMBERS */}
                             <div className="flex flex-wrap gap-2 mb-3">
-                                {editMembers.map((m) => (
-                                    <span key={m.userId}
-                                        className={getRoleBadgeClass(m.role)}
-                                    >
+                                        {editMembers.map((m) => (
+                                    <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
                                         {m.userName}
 
                                         {/* CHANGE ROLE */}
@@ -251,7 +229,7 @@ export default function KanbanBoard() {
                                                 ×
                                             </button>
                                         )}
-                                    </span>
+                                    </Badge>
                                 ))}
                             </div>
 
@@ -380,30 +358,28 @@ export default function KanbanBoard() {
                                             </h3>
 
                                             {/* RIGHT badge */}
-                                            <span className={`rounded-full px-2 py-1 text-xs font-medium 
-                                                ${task.priority === "High" ? "bg-red-100 text-red-700" : task.priority === "Medium"
-                                                    ? "bg-yellow-100 text-yellow-700": "bg-green-100 text-green-700"
-                                                    }`}
-                                            >
+                                            <Badge variant={task.priority === "High" ? "priority1" : task.priority === "Medium" ? "priority2" : "priority3"}>
                                                 {task.priority}
-                                            </span>
+                                            </Badge>
                                         </div>
 
                                         {/* Description */}
-                                        <p
-                                            title={task.description || ""}
+                                        <p title={task.description || ""}
                                             className="mt-1 text-sm text-slate-500 line-clamp-2"
                                         >
                                             {task.description || "No description"}
                                         </p>
 
                                         {/* Assigned Member */}
-                                        <p className="mt-2 text-sm text-slate-500">
-                                            Assigned to:{" "}
-                                            {(task.assignedUsers ?? []).length > 0
-                                                ? task.assignedUsers.map(u => u.userName).join(", ")
-                                                : "UnassignedUsers"}
-                                        </p>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {(task.assignedUsers ?? []).length > 0 ? (
+                                                task.assignedUsers.map((u) => (
+                                                    <Badge key={u.userId} variant="active">
+                                                        {u.userName}
+                                                    </Badge>
+                                                ))
+                                            ) : null }
+                                        </div>
 
                                         <p className="mt-2 text-sm text-slate-500">
                                             Due Date:{" "}
@@ -498,54 +474,46 @@ export default function KanbanBoard() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Assignees
-                                </label>
+                            <div className="flex flex-wrap gap-2">
+                                {project?.members.map((m) => {
+                                    const isSelected = (selectedTask.assignedUsers ?? [])
+                                        .some(u => u.userId === m.userId);
 
-                                <div className="flex flex-wrap gap-2">
-                                    {project?.members.map((m) => {
-                                        const isSelected = (selectedTask.assignedUsers ?? [])
-                                            .some(u => u.userId === m.userId);
+                                    return (
+                                        <div
+                                            key={m.userId}
+                                            onClick={() => {
+                                                setSelectedTask(prev => {
+                                                    if (!prev) return prev;
 
-                                        return (
-                                            <div
-                                                key={m.userId}
-                                                onClick={() => {
-                                                    setSelectedTask(prev => {
-                                                        if (!prev) return prev;
+                                                    const exists = (prev.assignedUsers ?? [])
+                                                        .some(u => u.userId === m.userId);
 
-                                                        const exists = (prev.assignedUsers ?? [])
-                                                            .some(u => u.userId === m.userId);
-
-                                                        return {
-                                                            ...prev,
-                                                            assignedUsers: exists
-                                                                ? (prev.assignedUsers ?? []).filter(u => u.userId !== m.userId)
-                                                                : [
-                                                                    ...(prev.assignedUsers ?? []),
-                                                                    {
-                                                                        userId: m.userId,
-                                                                        userName: m.userName
-                                                                    }
-                                                                ]
-                                                        };
-                                                    });
-                                                }}
-                                                className={`px-3 py-1 rounded-full text-sm cursor-pointer transition
-                        ${isSelected
-                                                        ? "bg-green-100 text-green-700 border border-green-300"
-                                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                                    }`}
-                                            >
+                                                    return {
+                                                        ...prev,
+                                                        assignedUsers: exists
+                                                            ? (prev.assignedUsers ?? []).filter(
+                                                                u => u.userId !== m.userId
+                                                            )
+                                                            : [
+                                                                ...(prev.assignedUsers ?? []),
+                                                                {
+                                                                    userId: m.userId,
+                                                                    userName: m.userName
+                                                                }
+                                                            ]
+                                                    };
+                                                });
+                                            }}
+                                        >
+                                            <Badge variant={isSelected ? "active" : "default"} className="cursor-pointer transition hover:opacity-80">
                                                 {m.userName}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                            </Badge>
+                                        </div>
+                                    );
+                                })}
                             </div>
-
-                    </div>
+                        </div>
 
 
                     <div className="mt-6 flex justify-between">
@@ -570,7 +538,6 @@ export default function KanbanBoard() {
                                 await deleteTask(Number(projectId), selectedTask.id);
 
                                 await loadTasks();
-
                                 setIsTaskModalOpen(false);
                                 setSelectedTask(null);
                                 }}
