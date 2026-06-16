@@ -476,30 +476,6 @@ export default function KanbanBoard() {
                                     </select>
                                 </div>
 
-                                {/* STATUS */}
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Status
-                                    </label>
-
-                                    <select
-                                        value={selectedTask.status}
-                                        onChange={(e) =>
-                                            setSelectedTask({
-                                                ...selectedTask,
-                                                status: e.target.value as Status
-                                            })
-                                        }
-                                        className="w-full rounded border px-3 py-2"
-                                    >
-                                        {statuses.map((status) => (
-                                            <option key={status} value={status}>
-                                                {status}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
                                 {/* DUE DATE */}
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">
@@ -509,8 +485,7 @@ export default function KanbanBoard() {
                                     <input
                                         type="date"
                                         value={ selectedTask.dueDate
-                                                ? new Date(selectedTask.dueDate).toISOString().split("T")[0]
-                                                : ""
+                                            ? new Date(selectedTask.dueDate).toLocaleDateString("sv-SE") : ""
                                         }
                                         onChange={(e) =>
                                             setSelectedTask({
@@ -521,8 +496,8 @@ export default function KanbanBoard() {
                                         className="w-full rounded border px-3 py-2"
                                     />
                                 </div>
-
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium mb-2">
                                     Assignees
@@ -536,47 +511,34 @@ export default function KanbanBoard() {
                                         return (
                                             <div
                                                 key={m.userId}
-                                                className={`px-3 py-1 rounded-full flex items-center gap-2 text-sm
-                                                    ${isSelected
-                                                        ? "bg-blue-100 text-blue-700"
-                                                        : "bg-slate-100 text-slate-600"
+                                                onClick={() => {
+                                                    setSelectedTask(prev => {
+                                                        if (!prev) return prev;
+
+                                                        const exists = (prev.assignedUsers ?? [])
+                                                            .some(u => u.userId === m.userId);
+
+                                                        return {
+                                                            ...prev,
+                                                            assignedUsers: exists
+                                                                ? (prev.assignedUsers ?? []).filter(u => u.userId !== m.userId)
+                                                                : [
+                                                                    ...(prev.assignedUsers ?? []),
+                                                                    {
+                                                                        userId: m.userId,
+                                                                        userName: m.userName
+                                                                    }
+                                                                ]
+                                                        };
+                                                    });
+                                                }}
+                                                className={`px-3 py-1 rounded-full text-sm cursor-pointer transition
+                        ${isSelected
+                                                        ? "bg-green-100 text-green-700 border border-green-300"
+                                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                     }`}
                                             >
-                                                {/* NAME */}
-                                                <span>{m.userName}</span>
-
-                                                {/* CLICKABLE SQUARE */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedTask(prev => {
-                                                            if (!prev) return prev;
-
-                                                            const exists = (prev.assignedUsers ?? [])
-                                                                .some(u => u.userId === m.userId);
-
-                                                            return {
-                                                                ...prev,
-                                                                assignedUsers: exists
-                                                                    ? (prev.assignedUsers ?? []).filter(u => u.userId !== m.userId)
-                                                                    : [
-                                                                        ...(prev.assignedUsers ?? []),
-                                                                        {
-                                                                            userId: m.userId,
-                                                                            userName: m.userName
-                                                                        }
-                                                                    ]
-                                                            };
-                                                        });
-                                                    }}
-                                                    className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-bold
-                            ${isSelected
-                                                            ? "bg-blue-600 text-white border-blue-600"
-                                                            : "bg-white"
-                                                        }`}
-                                                >
-                                                    {isSelected ? "✕" : ""}
-                                                </button>
+                                                {m.userName}
                                             </div>
                                         );
                                     })}
