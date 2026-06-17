@@ -6,6 +6,7 @@ import { type Project, type Member } from "../interfaces/IProject";
 import { getTasks, createTask, updateTask, deleteTask } from "../services/taskService";
 import { findUserByEmail } from "../services/userService";
 import Badge from "../components/Badge";
+import Button from "../components/Button";
 
 export default function KanbanBoard() {
     const navigate = useNavigate();
@@ -156,20 +157,18 @@ export default function KanbanBoard() {
                             {/* Edit and Delete button*/ }
                             {myRole === "Owner" ? (
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => {
+                                    <Button onClick={() => {
                                         setEditProject(project);
                                         setIsEditingProject(true);
                                     }}
-                                        className="flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                                            variant="primary"
                                     >
-                                        <span>Edit</span>
-                                    </button>
+                                        Edit
+                                    </Button>
 
-                                    <button onClick={handleDelete}
-                                        className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                                    >
-                                        <span>Delete</span>
-                                    </button>
+                                    <Button onClick={handleDelete} variant="danger">
+                                        Delete
+                                    </Button>
                                 </div>
 
                             ) : null}
@@ -242,7 +241,7 @@ export default function KanbanBoard() {
                                     onChange={(e) => setNewEmail(e.target.value)}
                                 />
 
-                                <button onClick={async () => {
+                                <Button onClick={async () => {
                                         if (!newEmail.trim()) return;
 
                                         setLoadingAdd(true);
@@ -268,49 +267,47 @@ export default function KanbanBoard() {
                                         setLoadingAdd(false);
                                     }}
                                     disabled={loadingAdd}
-                                    className="bg-green-600 text-white px-3 rounded"
+                                       variant="success"
                                 >
                                     {loadingAdd ? "..." : "Add"}
-                                </button>
+                                </Button>
                             </div>
 
                             {/* BUTTONS */}
                             <div className="flex gap-2">
-                                <button onClick={handleSave}
-                                    className="bg-green-600 text-white px-4 py-2 rounded"
-                                >
+                                <Button onClick={handleSave} variant="success">
                                     Save
-                                </button>
+                                </Button>
 
-                                <button
-                                    onClick={() => setIsEditingProject(false)}
-                                    className="bg-gray-300 px-4 py-2 rounded"
-                                >
+                                <Button onClick={() => setIsEditingProject(false)} variant="secondary">
                                     Cancel
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* NEW TASK BUTTON */  }
-                {myRole === "Admin" ? <button onClick={() => {
-                    setSelectedTask({
-                        id: 0,
-                        title: "",
-                        description: "",
-                        status: "Todo",
-                        priority: "High",
-                        dueDate: null,
-                        assignedUsers: []        
-                    });
+                {/* NEW TASK BUTTON */}
+                {(myRole === "Admin" || myRole === "Owner") && (
+                    <div className="flex justify-center mb-3">
+                        <Button onClick={() => {
+                                setSelectedTask({
+                                    id: 0,
+                                    title: "",
+                                    description: "",
+                                    status: "Todo",
+                                    priority: "High",
+                                    dueDate: null,
+                                    assignedUsers: []
+                                });
 
-                        setIsTaskModalOpen(true);
-                    }}
-                        className="mb-4 rounded bg-blue-600 px-4 py-2 text-white"
-                    >
-                        + New Task
-                </button> : null}
+                                setIsTaskModalOpen(true);
+                            }}
+                        >
+                            + New Task
+                        </Button>
+                    </div>
+                )}
 
                 {/* KANBAN */}
                 <div className="grid grid-cols-4 gap-4">
@@ -392,7 +389,7 @@ export default function KanbanBoard() {
                     <div className="space-y-4">
 
                         {/* TITLE */ }
-                        <div>
+                        <>
                             <label>
                                 Title
                             </label>
@@ -403,10 +400,10 @@ export default function KanbanBoard() {
                                 onChange={(e) => setSelectedTask({...selectedTask,title: e.target.value}) }
                                 className="w-full rounded border px-3 py-2"
                             />
-                        </div>
+                        </>
 
                         {/* DESCRIPTION */ }
-                        <div>
+                        <>
                             <label>
                                 Description
                             </label>
@@ -417,7 +414,7 @@ export default function KanbanBoard() {
                                 onChange={(e) => setSelectedTask({...selectedTask,description: e.target.value})}
                                 className="w-full rounded border px-3 py-2"
                             />
-                        </div>
+                        </>
 
                             {/* DROPDOWN ROWS (same row layout) */}
                             <div className="grid grid-cols-2 gap-4">
@@ -472,8 +469,7 @@ export default function KanbanBoard() {
                                         .some(u => u.userId === m.userId);
 
                                     return (
-                                        <div
-                                            key={m.userId}
+                                        <div key={m.userId}
                                             onClick={() => {
                                                 setSelectedTask(prev => {
                                                     if (!prev) return prev;
@@ -505,44 +501,44 @@ export default function KanbanBoard() {
 
                     <div className="mt-6 flex justify-between">
                         {/* Save button that create task if the task does not exits, otherwise edit task*/ }
-                        <button onClick={async () => {
-                            if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
-                            else await updateTask(Number(projectId), selectedTask.id, selectedTask);
+                        <Button onClick={async () => {
+                                if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
+                                else await updateTask(Number(projectId), selectedTask.id, selectedTask);
                                     
-                            await loadTasks();
-                            setIsTaskModalOpen(false);
-                            setSelectedTask(null);
-                            }}
-
-                            className="rounded bg-green-600 px-4 py-2 text-white"
-                        >
-                            Save
-                        </button>
-
-                        {/* Delete button that shows only when you click on the task*/ }
-                        {selectedTask.id !== 0 &&  myRole === "Admin" ? (
-                            <button onClick={async () => {
-                                await deleteTask(Number(projectId), selectedTask.id);
-
                                 await loadTasks();
                                 setIsTaskModalOpen(false);
                                 setSelectedTask(null);
                                 }}
+                                variant="success"
+                        >
+                            Save
+                        </Button>
 
-                                className="rounded bg-red-600 px-4 py-2 text-white"
+                        {/* Delete button that shows only when you click on the task*/ }
+                            {selectedTask.id !== 0 && (myRole === "Admin" || myRole === "Owner") ? (
+                            <Button onClick={async () => {
+                                    await deleteTask(Number(projectId), selectedTask.id);
+
+                                    await loadTasks();
+                                    setIsTaskModalOpen(false);
+                                    setSelectedTask(null);
+                                    }}
+
+                                    variant="danger"
                             >
                                 Delete
-                            </button>
+                            </Button>
                         ): null }
 
-                        <button onClick={() => {
+                        <Button onClick={() => {
                                 setIsTaskModalOpen(false);
                                 setSelectedTask(null);
-                            }}
-                            className="rounded bg-slate-300 px-4 py-2"
+                                }}
+
+                                variant="secondary"
                         >
                             Cancel
-                        </button>
+                        </Button>
 
                     </div>
                 </div>

@@ -1,5 +1,10 @@
 import preview from "../assets/preview.png"
+import Button from "../components/Button";
+import { useNavigate } from "react-router-dom";
+
 export default function IntroPage() {
+    const navigate = useNavigate();
+
     return (
       <>
           <section className="relative overflow-hidden">
@@ -20,14 +25,10 @@ export default function IntroPage() {
                     Plan projects, track progress, and keep your team aligned without the complexity of traditional project management and dedicate more time to delivering meaningful work.
                 </p>
 
-                <div className="flex flex-wrap gap-4">
-                  <button className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700">
-                    Start Free
-                  </button>
+                        <div className="flex flex-wrap gap-4">
+                            <Button onClick={() => navigate("/login")}>Start Free</Button>
 
-                  <button className="rounded-xl border border-slate-300 px-6 py-3 font-medium text-slate-700 hover:bg-slate-50">
-                    Book a Demo
-                  </button>
+                  <Button variant="ghost">Book a Demo</Button>
                 </div>
 
                             <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">

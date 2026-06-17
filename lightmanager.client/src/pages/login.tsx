@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "../context/useAuth";
 import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../services/authService";
+import Button from "../components/Button";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -13,39 +15,23 @@ export default function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch("/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        email,
-                        password,
-                    }),
-                }
-            );
-
-            if (!response.ok) {
-                const error = await response.text();
-                alert(error);
-                return;
-            }
-
-            const result = await response.json();
+            const result = await loginUser({
+                email,
+                password,
+            });
 
             localStorage.setItem("token", result.token);
 
             login({
                 fullName: result.fullName,
                 email: result.email,
-                userId: result.userId
+                userId: result.userId,
             });
 
-            navigate("/"); // redirect after login
+            navigate("/dashboard");
         } catch (error) {
             console.error(error);
-            alert("Login failed");
+            alert(error.message || "Login failed");
         }
     };
 
@@ -85,12 +71,10 @@ export default function Login() {
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full rounded bg-black py-2 text-white hover:bg-gray-800"
-                    >
+                    
+                    <Button type="submit" variant = "primary" className="w-full">
                         Login
-                    </button>
+                    </Button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-gray-600">

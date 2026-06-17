@@ -3,6 +3,7 @@ import { type Project } from "../interfaces/IProject";
 import { useState, useEffect } from "react";
 import { getProjects, createProject } from "../services/projectService";
 import Badge from "../components/Badge";
+import Button from "../components/Button";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -37,9 +38,7 @@ export default function Dashboard() {
                         <h1>Projects</h1>
                     </div>
 
-                    <button
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                        onClick={async () => {
+                    <Button onClick={async () => {
                             try
                             {
                                 const project = await createProject({ name: "New Project", description: "" });
@@ -52,9 +51,10 @@ export default function Dashboard() {
                                 alert("Failed to create project");
                             }
                         }}
+                        variant="primary"
                     >
                         New Project
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Table */}
