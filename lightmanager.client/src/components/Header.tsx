@@ -11,15 +11,12 @@ export default function Navbar() {
         <nav className="flex items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
             {/* Left Side */}
             <div className="flex items-center gap-6">
-                <p className="text-xl font-bold text-blue-600">
+                <Link to="/" className="text-xl font-bold text-blue-600">
                     LightManager
-                </p>
+                </Link>
 
-                <Link
-                    to="/"
-                    className="text-gray-700 hover:text-blue-600"
-                >
-                    Home
+                <Link to="/dashboard" className="text-gray-700 hover:text-blue-600">
+                    Dashboard
                 </Link>
             </div>
 
@@ -27,12 +24,11 @@ export default function Navbar() {
             <div>
                 {user ? (
                     <div className="flex items-center gap-3">
-                        <span className="text-gray-800 font-medium">
+                        <Link to="/profile" className="text-gray-800 font-medium">
                             {user.fullName}
-                        </span>
+                        </Link>
 
-                        <button
-                            onClick={() => {
+                        <button onClick={() => {
                                 logout();
                                 localStorage.removeItem("token");
                                 navigate("/login");
@@ -44,10 +40,7 @@ export default function Navbar() {
                         </button>
                     </div>
                 ) : (
-                    <Link
-                        to="/login"
-                        className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                    >
+                    <Link to="/login" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                         Login
                     </Link>
                 )}

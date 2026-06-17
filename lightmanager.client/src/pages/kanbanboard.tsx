@@ -154,7 +154,7 @@ export default function KanbanBoard() {
                             </div>
 
                             {/* Edit and Delete button*/ }
-                            {myRole === "Owner" || myRole === "Admin" ? (
+                            {myRole === "Owner" ? (
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => {
                                         setEditProject(project);
@@ -206,7 +206,7 @@ export default function KanbanBoard() {
 
                             {/* MEMBERS */}
                             <div className="flex flex-wrap gap-2 mb-3">
-                                        {editMembers.map((m) => (
+                                {editMembers.map((m) => (
                                     <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
                                         {m.userName}
 
@@ -294,15 +294,15 @@ export default function KanbanBoard() {
                 </div>
 
                 {/* NEW TASK BUTTON */  }
-                {myRole === "Owner" ? <button onClick={() => {
+                {myRole === "Admin" ? <button onClick={() => {
                     setSelectedTask({
                         id: 0,
                         title: "",
                         description: "",
                         status: "Todo",
                         priority: "High",
-                        assignedUsers: [],
-                        dueDate: null
+                        dueDate: null,
+                        assignedUsers: []        
                     });
 
                         setIsTaskModalOpen(true);
@@ -315,8 +315,7 @@ export default function KanbanBoard() {
                 {/* KANBAN */}
                 <div className="grid grid-cols-4 gap-4">
                     {statuses.map((status) => (
-                        <div
-                            key={status}
+                        <div key={status}
                             className="min-h-[400px] rounded bg-white p-4 shadow"
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={() => handleDropColumn(status)}
@@ -344,8 +343,7 @@ export default function KanbanBoard() {
                                         }}
                                         className="mb-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition hover:shadow"
                                     >
-                                        {/* Title */}
-                                        {/* Priority */}
+                                        {/* Title + Priority */}
                                         <div className="mt-3 flex items-center">
                                             {/* LEFT spacer */}
                                             <div className="w-10" />
@@ -363,13 +361,6 @@ export default function KanbanBoard() {
                                             </Badge>
                                         </div>
 
-                                        {/* Description */}
-                                        <p title={task.description || ""}
-                                            className="mt-1 text-sm text-slate-500 line-clamp-2"
-                                        >
-                                            {task.description || "No description"}
-                                        </p>
-
                                         {/* Assigned Member */}
                                         <div className="mt-2 flex flex-wrap gap-1">
                                             {(task.assignedUsers ?? []).length > 0 ? (
@@ -381,10 +372,11 @@ export default function KanbanBoard() {
                                             ) : null }
                                         </div>
 
-                                        <p className="mt-2 text-sm text-slate-500">
-                                            Due Date:{" "}
-                                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "Not set"}
-                                        </p>
+                                        {task.dueDate && (
+                                            <p className="mt-2">
+                                                Due Date: {new Date(task.dueDate).toLocaleDateString()}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                         </div>
@@ -489,14 +481,9 @@ export default function KanbanBoard() {
                                                     const exists = (prev.assignedUsers ?? [])
                                                         .some(u => u.userId === m.userId);
 
-                                                    return {
-                                                        ...prev,
-                                                        assignedUsers: exists
-                                                            ? (prev.assignedUsers ?? []).filter(
-                                                                u => u.userId !== m.userId
-                                                            )
-                                                            : [
-                                                                ...(prev.assignedUsers ?? []),
+                                                    return {...prev, assignedUsers: exists
+                                                            ? (prev.assignedUsers ?? []).filter(u => u.userId !== m.userId)
+                                                            : [...(prev.assignedUsers ?? []),
                                                                 {
                                                                     userId: m.userId,
                                                                     userName: m.userName
@@ -533,7 +520,7 @@ export default function KanbanBoard() {
                         </button>
 
                         {/* Delete button that shows only when you click on the task*/ }
-                        {selectedTask.id !== 0 &&  myRole === "Owner" ? (
+                        {selectedTask.id !== 0 &&  myRole === "Admin" ? (
                             <button onClick={async () => {
                                 await deleteTask(Number(projectId), selectedTask.id);
 

@@ -34,12 +34,7 @@ export default function Dashboard() {
                 {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-800">
-                            Projects
-                        </h1>
-                        <p className="text-slate-500">
-                            Manage and track all projects.
-                        </p>
+                        <h1>Projects</h1>
                     </div>
 
                     <button

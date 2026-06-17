@@ -32,5 +32,6 @@ namespace LightManager.Server.Controllers
                 email = user.Email
             });
         }
+
     }
 }
