@@ -7,6 +7,7 @@ import { getTasks, createTask, updateTask, deleteTask } from "../services/taskSe
 import { findUserByEmail } from "../services/userService";
 import Badge from "../components/Badge";
 import Button from "../components/Button";
+import Input from "../components/InputForm";
 
 export default function KanbanBoard() {
     const navigate = useNavigate();
@@ -111,328 +112,322 @@ export default function KanbanBoard() {
 
         try {
             await deleteProject(project.id);
-            navigate("/");
+            navigate("/dashboard");
         } catch (err) {
             console.error(err);
             alert("Failed to delete project");
         }
     };
 
+    const closeTaskModal = async () => {
+        await loadTasks();
+        setIsTaskModalOpen(false);
+        setSelectedTask(null);
+    }
+
     // ===================== UI =====================
     return (
         <>
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="mx-auto max-w-7xl">
+            <div className="min-h-screen bg-slate-50 p-6">
+                <div className="mx-auto max-w-7xl">
 
-                {/* HEADER */}
-                <div className="mb-8 rounded-xl bg-white p-6 shadow">
+                    {/* HEADER */}
+                    <div className="mb-8 rounded-xl bg-white p-6 shadow">
 
-                    {!isEditingProject ? (
-                        <div className="flex items-start justify-between">
-                            <div className="flex flex-col">
-                                {/* Title */}
-                                <div className="flex items-center gap-3">
-                                    <h1> {project?.name} </h1>
+                        {!isEditingProject ? (
+                            <div className="flex items-start justify-between">
+                                <div className="flex flex-col">
+                                    {/* Title */}
+                                    <div className="flex items-center gap-3">
+                                        <h1> {project?.name} </h1>
 
-                                    <Badge variant={project?.status === "Active" ? "active" : "default"}>
-                                        {project?.status}
-                                    </Badge>
+                                        <Badge variant={project?.status === "Active" ? "active" : "default"}>
+                                            {project?.status}
+                                        </Badge>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="flex">
+                                        <p>{project?.description}</p>
+                                    </div>
+
+                                    {/* Members */}
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {members.map((m) => (
+                                            <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
+                                                {m.userName} ({m.role})
+                                            </Badge>
+                                        ))}
+                                    </div>
                                 </div>
+
+                                {/* Edit and Delete button*/ }
+                                {myRole === "Owner" ? (
+                                    <div className="flex items-center gap-2">
+                                        <Button onClick={() => {
+                                            setEditProject(project);
+                                            setIsEditingProject(true);
+                                        }}
+                                                variant="primary"
+                                        >
+                                            Edit
+                                        </Button>
+
+                                        <Button onClick={handleDelete} variant="danger">
+                                            Delete
+                                        </Button>
+                                    </div>
+
+                                ) : null}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+
+                                {/* Title */}
+                                <Input label="Title"
+                                    value={editProject?.name || ""}
+                                    onChange={(value) => setEditProject((prev) => prev ? { ...prev, name: value } : prev)} />
+
 
                                 {/* Description */}
-                                <div className="flex">
-                                    <p> {project?.description} </p>
+                                <label>Description</label>
+                                <textarea value={editProject?.description || ""}
+                                    onChange={(e) => setEditProject((prev) => prev ? { ...prev, description: e.target.value } : prev)}
+                                    className="w-full border p-2 rounded"
+                                />
+
+                                {/* Status */}
+                                <div className="flex items-center gap-2">
+                                    <label> Status </label>
+
+                                    <select value={editProject?.status ?? "Active"}
+                                        onChange={(e) => setEditProject(prev => prev ? { ...prev, status: e.target.value as "Active" | "Archived" } : prev)}
+                                        className="rounded border p-2"
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Archived">Archived</option>
+                                    </select>
                                 </div>
 
-                                {/* Members */}
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {members.map((m) => (
+                                {/* MEMBERS */}
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {editMembers.map((m) => (
                                         <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
-                                            {m.userName} ({m.role})
+                                            {m.userName}
+
+                                            {/* CHANGE ROLE */}
+                                            <select value={m.role}
+                                                disabled={m.role === "Owner"}
+                                                onChange={(e) => {setEditMembers(prev =>
+                                                    prev.map(member => member.userId === m.userId ? { ...member, role: e.target.value }: member));
+                                                }}
+                                                className="rounded border p-2 disabled:bg-slate-100 disabled:text-slate-500"
+                                            >
+                                                <option value="Admin">Admin</option>
+                                                <option value="Member">Member</option>
+                                            </select>
+
+                                            {m.role !== "Owner" && (
+                                                <button onClick={() => { setEditMembers(prev => prev.filter(member => member.userId !== m.userId)); }}
+                                                    className="text-red-500"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
                                         </Badge>
                                     ))}
                                 </div>
-                            </div>
 
-                            {/* Edit and Delete button*/ }
-                            {myRole === "Owner" ? (
-                                <div className="flex items-center gap-2">
-                                    <Button onClick={() => {
-                                        setEditProject(project);
-                                        setIsEditingProject(true);
-                                    }}
-                                            variant="primary"
+                                {/* ADD MEMBER INPUT */}
+                                <div className="flex gap-2 mb-4">
+                                    <Input type="email" placeholder="Add member by email" value={newEmail} onChange={(value) => setNewEmail(value)} />
+
+                                    <Button onClick={async () => {
+                                            if (!newEmail.trim()) return;
+
+                                            setLoadingAdd(true);
+
+                                            const user = await findUserByEmail(newEmail);
+
+                                            if (user == null) return; 
+
+                                            const newMember = {
+                                                userId: user.id,
+                                                userName: user.userName,
+                                                email: user.email,
+                                                role: "Member"
+                                            };
+
+                                            setEditMembers(prev => { const exists = prev.some(m => m.userId === user.id);
+                                                if (exists) return prev;
+
+                                                return [...prev, newMember];
+                                            });
+
+                                            setNewEmail("");
+                                            setLoadingAdd(false);
+                                        }}
+                                        disabled={loadingAdd}
+                                           variant="success"
                                     >
-                                        Edit
-                                    </Button>
-
-                                    <Button onClick={handleDelete} variant="danger">
-                                        Delete
+                                        {loadingAdd ? "..." : "Add"}
                                     </Button>
                                 </div>
 
-                            ) : null}
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
+                                {/* BUTTONS */}
+                                <div className="flex gap-2">
+                                    <Button onClick={handleSave} variant="success">
+                                        Save
+                                    </Button>
 
-                            {/* Title */}
-                            <label className = "flex">Title</label>
-                            <input value={editProject?.name || ""}
-                                onChange={(e) => setEditProject((prev) => prev ? { ...prev, name: e.target.value } : prev)}
-                                className="w-full border p-2 rounded"
-                            />
-
-                            {/* Description */}
-                            <label className="flex">Description</label>
-                            <textarea value={editProject?.description || ""}
-                                onChange={(e) => setEditProject((prev) => prev ? { ...prev, description: e.target.value } : prev)}
-                                className="w-full border p-2 rounded"
-                            />
-
-                            {/* Status */}
-                            <div className="flex items-center gap-2">
-                                <label> Status </label>
-
-                                <select value={editProject?.status ?? "Active"}
-                                    onChange={(e) => setEditProject(prev => prev ? { ...prev, status: e.target.value as "Active" | "Archived" } : prev)}
-                                    className="rounded border p-2"
-                                >
-                                    <option value="Active">Active</option>
-                                    <option value="Archived">Archived</option>
-                                </select>
+                                    <Button onClick={() => setIsEditingProject(false)} variant="secondary">
+                                        Cancel
+                                    </Button>
+                                </div>
                             </div>
+                        )}
+                    </div>
 
-                            {/* MEMBERS */}
-                            <div className="flex flex-wrap gap-2 mb-3">
-                                {editMembers.map((m) => (
-                                    <Badge key={m.userId} variant={m.role === "Owner" ? "priority1" : m.role === "Admin" ? "priority2" : "priority3"}>
-                                        {m.userName}
+                    {/* NEW TASK BUTTON */}
+                    {(myRole === "Admin" || myRole === "Owner") && (
+                        <div className="flex justify-center mb-3">
+                            <Button onClick={() => {
+                                    setSelectedTask({
+                                        id: 0,
+                                        title: "",
+                                        description: "",
+                                        status: "Todo",
+                                        priority: "High",
+                                        dueDate: null,
+                                        assignedUsers: []
+                                    });
 
-                                        {/* CHANGE ROLE */}
-                                        <select value={m.role}
-                                            disabled={m.role === "Owner"}
-                                            onChange={(e) => {setEditMembers(prev =>
-                                                prev.map(member => member.userId === m.userId ? { ...member, role: e.target.value }: member));
-                                            }}
-                                            className="rounded border p-2 disabled:bg-slate-100 disabled:text-slate-500"
-                                        >
-                                            <option value="Admin">Admin</option>
-                                            <option value="Member">Member</option>
-                                        </select>
-
-                                        {m.role !== "Owner" && (
-                                            <button onClick={() => { setEditMembers(prev => prev.filter(member => member.userId !== m.userId)); }}
-                                                className="text-red-500"
-                                            >
-                                                ×
-                                            </button>
-                                        )}
-                                    </Badge>
-                                ))}
-                            </div>
-
-                            {/* ADD MEMBER INPUT */}
-                            <div className="flex gap-2 mb-4">
-                                <input type="email"
-                                    className="border p-2 flex-1"
-                                    placeholder="user@email.com"
-                                    value={newEmail}
-                                    onChange={(e) => setNewEmail(e.target.value)}
-                                />
-
-                                <Button onClick={async () => {
-                                        if (!newEmail.trim()) return;
-
-                                        setLoadingAdd(true);
-
-                                        const user = await findUserByEmail(newEmail);
-
-                                        if (user == null) return; 
-
-                                        const newMember = {
-                                            userId: user.id,
-                                            userName: user.userName,
-                                            email: user.email,
-                                            role: "Member"
-                                        };
-
-                                        setEditMembers(prev => { const exists = prev.some(m => m.userId === user.id);
-                                            if (exists) return prev;
-
-                                            return [...prev, newMember];
-                                        });
-
-                                        setNewEmail("");
-                                        setLoadingAdd(false);
-                                    }}
-                                    disabled={loadingAdd}
-                                       variant="success"
-                                >
-                                    {loadingAdd ? "..." : "Add"}
-                                </Button>
-                            </div>
-
-                            {/* BUTTONS */}
-                            <div className="flex gap-2">
-                                <Button onClick={handleSave} variant="success">
-                                    Save
-                                </Button>
-
-                                <Button onClick={() => setIsEditingProject(false)} variant="secondary">
-                                    Cancel
-                                </Button>
-                            </div>
+                                    setIsTaskModalOpen(true);
+                                }}
+                            >
+                                + New Task
+                            </Button>
                         </div>
                     )}
-                </div>
 
-                {/* NEW TASK BUTTON */}
-                {(myRole === "Admin" || myRole === "Owner") && (
-                    <div className="flex justify-center mb-3">
-                        <Button onClick={() => {
-                                setSelectedTask({
-                                    id: 0,
-                                    title: "",
-                                    description: "",
-                                    status: "Todo",
-                                    priority: "High",
-                                    dueDate: null,
-                                    assignedUsers: []
-                                });
+                    {/* KANBAN */}
+                    <div className="grid grid-cols-4 gap-4">
+                        {statuses.map((status) => (
+                            <div key={status}
+                                className="min-h-[400px] rounded bg-white p-4 shadow"
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => handleDropColumn(status)}
+                            >
+                                <h2 className={`mb-3 rounded px-3 py-2 font-bold text-white
+                                    ${status === "In Progress" ? "bg-blue-100" : status === "Review" ? "bg-purple-100"
+                                        : status === "Done" ? "bg-green-100" : "bg-slate-100"}`}
+                                >
+                                    {status}
+                                </h2>
 
-                                setIsTaskModalOpen(true);
-                            }}
-                        >
-                            + New Task
-                        </Button>
+                                {tasks.filter((t) => t.status === status)
+                                    .sort((a, b) => {
+                                        const priorityOrder = {
+                                            High: 3,
+                                            Medium: 2,
+                                            Low: 1
+                                        };
+
+                                        return priorityOrder[b.priority] - priorityOrder[a.priority];
+                                    })
+                                    .map((task) => (
+                                        <div key={task.id}
+                                            draggable
+                                            onDragStart={() => setDraggedTask(task)}
+
+                                            onClick={() => {
+                                                setSelectedTask(task);
+                                                setIsTaskModalOpen(true);
+                                            }}
+                                            className="mb-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition hover:shadow"
+                                        >
+                                            {/* Title + Priority */}
+                                            <div className="mt-3 flex items-center">
+                                                {/* LEFT spacer */}
+                                                <div className="w-10" />
+
+                                                {/* CENTER title */}
+                                                <h3 title={task.title}
+                                                    className="flex-1 min-w-0 text-center font-medium text-slate-800 truncate"
+                                                >
+                                                    {task.title}
+                                                </h3>
+
+                                                {/* RIGHT badge */}
+                                                <Badge variant={task.priority === "High" ? "priority1" : task.priority === "Medium" ? "priority2" : "priority3"}>
+                                                    {task.priority}
+                                                </Badge>
+                                            </div>
+
+                                            {/* Assigned Member */}
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                {(task.assignedUsers ?? []).length > 0 ? (
+                                                    task.assignedUsers.map((u) => (
+                                                        <Badge key={u.userId} variant="active">
+                                                            {u.userName}
+                                                        </Badge>
+                                                    ))
+                                                ) : null }
+                                            </div>
+
+                                            {task.dueDate && (
+                                                <p className="mt-2">
+                                                    Due Date: {new Date(task.dueDate).toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                            </div>
+                        ))}
                     </div>
-                )}
-
-                {/* KANBAN */}
-                <div className="grid grid-cols-4 gap-4">
-                    {statuses.map((status) => (
-                        <div key={status}
-                            className="min-h-[400px] rounded bg-white p-4 shadow"
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={() => handleDropColumn(status)}
-                        >
-                            <h2 className="mb-3 font-bold">{status}</h2>
-
-                            {tasks.filter((t) => t.status === status)
-                                .sort((a, b) => {
-                                    const priorityOrder = {
-                                        High: 3,
-                                        Medium: 2,
-                                        Low: 1
-                                    };
-
-                                    return priorityOrder[b.priority] - priorityOrder[a.priority];
-                                })
-                                .map((task) => (
-                                    <div key={task.id}
-                                        draggable
-                                        onDragStart={() => setDraggedTask(task)}
-
-                                        onClick={() => {
-                                            setSelectedTask(task);
-                                            setIsTaskModalOpen(true);
-                                        }}
-                                        className="mb-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-sm transition hover:shadow"
-                                    >
-                                        {/* Title + Priority */}
-                                        <div className="mt-3 flex items-center">
-                                            {/* LEFT spacer */}
-                                            <div className="w-10" />
-
-                                            {/* CENTER title */}
-                                            <h3 title={task.title}
-                                                className="flex-1 min-w-0 text-center font-medium text-slate-800 truncate"
-                                            >
-                                                {task.title}
-                                            </h3>
-
-                                            {/* RIGHT badge */}
-                                            <Badge variant={task.priority === "High" ? "priority1" : task.priority === "Medium" ? "priority2" : "priority3"}>
-                                                {task.priority}
-                                            </Badge>
-                                        </div>
-
-                                        {/* Assigned Member */}
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {(task.assignedUsers ?? []).length > 0 ? (
-                                                task.assignedUsers.map((u) => (
-                                                    <Badge key={u.userId} variant="active">
-                                                        {u.userName}
-                                                    </Badge>
-                                                ))
-                                            ) : null }
-                                        </div>
-
-                                        {task.dueDate && (
-                                            <p className="mt-2">
-                                                Due Date: {new Date(task.dueDate).toLocaleDateString()}
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
-                        </div>
-                    ))}
                 </div>
             </div>
-        </div>
 
-        {/* TASK MODAL */}
-        {isTaskModalOpen && selectedTask && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-                    <div className="space-y-4">
+            {/* ============================== TASK MODAL ================================= */}
+            {isTaskModalOpen && selectedTask && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+                        <div className="space-y-4">
 
-                        {/* TITLE */ }
-                        <>
-                            <label>
-                                Title
-                            </label>
-
-                            <input
-                                type="text"
+                            {/* TITLE */}
+                            <Input label="Title"
                                 value={selectedTask.title}
-                                onChange={(e) => setSelectedTask({...selectedTask,title: e.target.value}) }
-                                className="w-full rounded border px-3 py-2"
-                            />
-                        </>
+                                type = "text"
+                                onChange={(value) => setSelectedTask(prev => prev ? { ...prev, title: value } : prev)} />
 
-                        {/* DESCRIPTION */ }
-                        <>
-                            <label>
-                                Description
-                            </label>
+                            {/* DESCRIPTION */ }
+                            <>
+                                <label>
+                                    Description
+                                </label>
 
-                            <textarea
-                                rows={4}
-                                value={selectedTask.description || ""}
-                                onChange={(e) => setSelectedTask({...selectedTask,description: e.target.value})}
-                                className="w-full rounded border px-3 py-2"
-                            />
-                        </>
+                                 <textarea rows={4}
+                                        value={selectedTask.description || ""}
+                                        onChange={(e) => setSelectedTask({...selectedTask,description: e.target.value})}
+                                        className="w-full rounded border px-3 py-2"
+                                    />
+                            </>
 
                             {/* DROPDOWN ROWS (same row layout) */}
                             <div className="grid grid-cols-2 gap-4">
 
                                 {/* PRIORITY */}
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium">
+                                    <label>
                                         Priority
                                     </label>
 
                                     <select
                                         value={selectedTask.priority}
-                                        onChange={(e) =>
-                                            setSelectedTask({
+                                        onChange={(e) => setSelectedTask({
                                                 ...selectedTask,
                                                 priority: e.target.value as "Low" | "Medium" | "High"
-                                            })
-                                        }
+                                        })}
                                         className="w-full rounded border px-3 py-2"
                                     >
                                         <option value="Low">Low</option>
@@ -442,108 +437,77 @@ export default function KanbanBoard() {
                                 </div>
 
                                 {/* DUE DATE */}
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Due Date
-                                    </label>
-
-                                    <input
-                                        type="date"
-                                        value={ selectedTask.dueDate
-                                            ? new Date(selectedTask.dueDate).toLocaleDateString("sv-SE") : ""
-                                        }
-                                        onChange={(e) =>
-                                            setSelectedTask({
-                                                ...selectedTask,
-                                                dueDate: e.target.value ? new Date(e.target.value) : null
-                                            })
-                                        }
-                                        className="w-full rounded border px-3 py-2"
-                                    />
-                                </div>
+                                <Input label="Due Date"
+                                    type="date"
+                                    value={selectedTask.dueDate? new Date(selectedTask.dueDate).toLocaleDateString("sv-SE") : ""}
+                                    onChange={(value) => setSelectedTask({ ...selectedTask, dueDate: value ? new Date(value) : null })}
+                                />                               
                             </div>
 
+                            <label>Assignees</label>
                             <div className="flex flex-wrap gap-2">
                                 {project?.members.map((m) => {
-                                    const isSelected = (selectedTask.assignedUsers ?? [])
-                                        .some(u => u.userId === m.userId);
-
                                     return (
-                                        <div key={m.userId}
-                                            onClick={() => {
-                                                setSelectedTask(prev => {
-                                                    if (!prev) return prev;
+                                        <Badge key={m.userId}
+                                            variant={(selectedTask?.assignedUsers ?? []).some( u => u.userId === m.userId) ? "active": "default"}
+                                            className="cursor-pointer transition hover:opacity-80"
+                                            onClick={() => setSelectedTask(prev => {
+                                                if (!prev) return prev;
 
-                                                    const exists = (prev.assignedUsers ?? [])
-                                                        .some(u => u.userId === m.userId);
+                                                const exists = (prev.assignedUsers ?? []).some(u => u.userId === m.userId);
 
-                                                    return {...prev, assignedUsers: exists
-                                                            ? (prev.assignedUsers ?? []).filter(u => u.userId !== m.userId)
-                                                            : [...(prev.assignedUsers ?? []),
-                                                                {
-                                                                    userId: m.userId,
-                                                                    userName: m.userName
-                                                                }
-                                                            ]
-                                                    };
-                                                });
-                                            }}
+                                                return { ...prev, assignedUsers : exists ? (prev.assignedUsers ?? []).filter( u => u.userId !== m.userId)
+                                                    : [...(prev.assignedUsers ?? []),
+                                                        {
+                                                            userId: m.userId,
+                                                            userName: m.userName
+                                                        }
+                                                    ]};
+                                            })}
                                         >
-                                            <Badge variant={isSelected ? "active" : "default"} className="cursor-pointer transition hover:opacity-80">
-                                                {m.userName}
-                                            </Badge>
-                                        </div>
+                                            {m.userName}
+                                        </Badge>
                                     );
                                 })}
                             </div>
                         </div>
 
 
-                    <div className="mt-6 flex justify-between">
-                        {/* Save button that create task if the task does not exits, otherwise edit task*/ }
-                        <Button onClick={async () => {
-                                if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
-                                else await updateTask(Number(projectId), selectedTask.id, selectedTask);
-                                    
-                                await loadTasks();
-                                setIsTaskModalOpen(false);
-                                setSelectedTask(null);
-                                }}
-                                variant="success"
-                        >
-                            Save
-                        </Button>
-
-                        {/* Delete button that shows only when you click on the task*/ }
-                            {selectedTask.id !== 0 && (myRole === "Admin" || myRole === "Owner") ? (
+                        <div className="mt-6 flex justify-between">
+                            {/* Save button that create task if the task does not exits, otherwise edit task*/ }
                             <Button onClick={async () => {
-                                    await deleteTask(Number(projectId), selectedTask.id);
+                                    if (selectedTask.id === 0) await createTask(Number(projectId), selectedTask);
+                                    else await updateTask(Number(projectId), selectedTask.id, selectedTask);
 
-                                    await loadTasks();
-                                    setIsTaskModalOpen(false);
-                                    setSelectedTask(null);
+                                    closeTaskModal();
                                     }}
-
-                                    variant="danger"
+                                    variant="success"
                             >
-                                Delete
+                                Save
                             </Button>
-                        ): null }
 
-                        <Button onClick={() => {
-                                setIsTaskModalOpen(false);
-                                setSelectedTask(null);
+                            {/* Delete button that shows only when you click on the task*/ }
+                                {selectedTask.id !== 0 && (myRole === "Admin" || myRole === "Owner") ? (
+                                <Button onClick={async () => {
+                                        await deleteTask(Number(projectId), selectedTask.id);
+
+                                        closeTaskModal();
                                 }}
 
-                                variant="secondary"
-                        >
-                            Cancel
-                        </Button>
+                                        variant="danger"
+                                >
+                                    Delete
+                                </Button>
+                            ): null }
 
+                            <Button onClick={closeTaskModal} variant="secondary">
+                                Cancel
+                            </Button>
+
+                        </div>
                     </div>
                 </div>
-            </div>
-            )}
+                )}
         </>
     );
 }  

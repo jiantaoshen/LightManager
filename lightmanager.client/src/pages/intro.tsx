@@ -7,10 +7,10 @@ export default function IntroPage() {
 
     return (
       <>
-          <section className="relative overflow-hidden">
-            <div className="absolute right-0 top-0 h-[100px] w-[100px] rounded-full bg-indigo-100 blur-3xl" />
+            <section className="relative overflow-hidden">
+                <div className="absolute right-0 top-0 h-[100px] w-[100px] rounded-full bg-indigo-100 blur-3xl" />
 
-            <div className="mx-auto grid max-w-7xl gap-16 px-6 py-20 lg:grid-cols-2 lg:items-center">
+                <div className="mx-auto grid max-w-screen-2xl gap-10 px-8 py-12 lg:grid-cols-[1fr_1.4fr] lg:items-center">
               {/* Left Content */}
               <div>
                 <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl">

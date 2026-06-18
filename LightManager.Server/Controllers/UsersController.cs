@@ -18,8 +18,6 @@ namespace LightManager.Server.Controllers
         [HttpGet("by-email")]
         public async Task<IActionResult> GetUserByEmail([FromQuery] string email)
         {
-            Console.WriteLine("BY EMAIL HIT"); // 👈 add this
-
             var user = await _userManager.FindByEmailAsync(email);
 
             if (user == null)

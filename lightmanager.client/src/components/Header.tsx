@@ -7,7 +7,7 @@ export default function Navbar() {
     const navigate = useNavigate();
 
     return (
-        <nav className="flex items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
+        <nav className="flex items-center bg-sky-50 justify-between border-b px-6 py-4 shadow-sm">
             {/* Left Side */}
             <div className="flex items-center gap-6">
                 <Link to="/" className="text-xl font-bold text-blue-600">
