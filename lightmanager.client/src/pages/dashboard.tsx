@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { type Project } from "../interfaces/IProject";
 import { useState, useEffect } from "react";
 import { getProjects, createProject } from "../services/projectService";
-import ProjectStatusBadge from '../components/StatusBadge';
+import Badge from "../components/Badge";
+import Button from "../components/Button";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -34,17 +35,10 @@ export default function Dashboard() {
                 {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-800">
-                            Projects
-                        </h1>
-                        <p className="text-slate-500">
-                            Manage and track all projects.
-                        </p>
+                        <h1>Projects</h1>
                     </div>
 
-                    <button
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                        onClick={async () => {
+                    <Button onClick={async () => {
                             try
                             {
                                 const project = await createProject({ name: "New Project", description: "" });
@@ -57,9 +51,10 @@ export default function Dashboard() {
                                 alert("Failed to create project");
                             }
                         }}
+                        variant="primary"
                     >
                         New Project
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Table */}
@@ -109,7 +104,9 @@ export default function Dashboard() {
                                     </td>
 
                                     <td className="px-6 py-4 text-left">
-                                        <ProjectStatusBadge status={project.status} />
+                                        <Badge variant={project.status === "Active" ? "active" : "default"}>
+                                            {project.status}
+                                        </Badge>
                                     </td>
                                 </tr>
                             ))}

@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { registerUser, loginUser } from "../services/authService";
+import { useAuth } from "../context/useAuth";
+import Button from "../components/Button";
 
 export default function Register() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const { login } = useAuth();
 
     const navigate = useNavigate();
 
@@ -18,35 +22,30 @@ export default function Register() {
         }
 
         try {
-            const response = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    fullName,
-                    email,
-                    password,
-                }),
+            await registerUser({fullName,email,password,});
+
+            // Automatically log in the user after successful registration
+            const loginResult = await loginUser({email,password,});
+
+            localStorage.setItem("token", loginResult.token);
+
+            login({
+                fullName: loginResult.fullName,
+                email: loginResult.email,
+                userId: loginResult.userId,
             });
 
-            if (!response.ok) {
-                const error = await response.text();
-                alert(error);
-                return;
-            }
-
-            navigate("/login"); // redirect after login
+            navigate("/dashboard");
         } catch (error) {
             console.error(error);
-            alert("Failed to connect to server");
+            alert(error.message || "Failed to register");
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white px-4">
-            <div className="w-full max-w-sm">
-                <h1 className="mb-8 text-center text-3xl font-bold text-black">
+        <div className="flex justify-center pt-10 pb-10">
+            <div className="w-full max-w-md rounded bg-white px-10 py-10">
+                <h1 className="text-center text-3xl font-bold text-black">
                     Create Account
                 </h1>
 
@@ -104,29 +103,21 @@ export default function Register() {
                         <input
                             type="password"
                             value={confirmPassword}
-                            onChange={(e) =>
-                                setConfirmPassword(e.target.value)
-                            }
+                            onChange={(e) =>setConfirmPassword(e.target.value)}
                             className="w-full rounded border border-gray-300 px-3 py-2"
                             placeholder="Confirm password"
                             required
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full rounded bg-black py-2 text-white hover:bg-gray-800"
-                    >
+                    <Button type="submit" variant="primary" className = "w-full">
                         Register
-                    </button>
+                    </Button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Already have an account?{" "}
-                    <Link
-                        to="/login"
-                        className="font-medium text-black hover:underline"
-                    >
+                    <Link to="/login" className="font-medium text-black hover:underline">
                         Login
                     </Link>
                 </p>

@@ -62,21 +62,30 @@ namespace LightManager.Server.Controllers
             await _context.SaveChangesAsync();
 
             // add users
-            if (dto.AssignedUserIds != null)
+            if (dto.AssignedUsers != null)
             {
-                foreach (var userId in dto.AssignedUserIds)
+                foreach (var user in dto.AssignedUsers)
                 {
                     _context.Set<TaskAssigneeModel>().Add(new TaskAssigneeModel
                     {
                         TaskId = task.Id,
-                        UserId = userId
+                        UserId = user.UserId
                     });
                 }
 
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(task);
+            return Ok(new TaskDetailDTO
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Description = task.Description,
+                Status = task.Status,
+                Priority = task.Priority,
+                DueDate = task.DueDate,
+                AssignedUsers = dto.AssignedUsers ?? new()
+            });
         }
 
         [HttpPut("{taskId}")]
@@ -112,11 +121,18 @@ namespace LightManager.Server.Controllers
         [HttpDelete("{taskId}")]
         public async Task<IActionResult> DeleteTask(int projectId, int taskId)
         {
+            var assignees = _context.TaskAssignees
+                .Where(x => x.TaskId == taskId);
+
+            _context.TaskAssignees.RemoveRange(assignees);
+
             var task = await _context.Tasks.FindAsync(taskId);
             if (task == null) return NotFound();
 
             _context.Tasks.Remove(task);
+
             await _context.SaveChangesAsync();
+
             return Ok();
         }
     }

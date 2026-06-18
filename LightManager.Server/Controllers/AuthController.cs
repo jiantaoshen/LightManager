@@ -38,7 +38,10 @@ public class AuthController : ControllerBase
             return BadRequest(result.Errors);
         }
 
-        return Ok("Registration successful.");
+        return Ok(new
+        {
+            message = "User created successfully"
+        });
     }
 
     [HttpPost("login")]

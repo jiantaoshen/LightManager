@@ -10,7 +10,7 @@
 
         public string Priority { get; set; } = "Medium";
 
-        public List<string> AssignedUserIds { get; set; } = new();
+        public List<TaskUserDTO> AssignedUsers { get; set; } = new();
 
         public DateTime? DueDate { get; set; } 
     }
