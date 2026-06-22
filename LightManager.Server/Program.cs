@@ -44,7 +44,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactApp", policy =>
     {
         policy
-            .WithOrigins("https://light-manager-cy806e07g-jiantaos-projects.vercel.app/")
+            .WithOrigins("https://light-manager-cy806e07g-jiantaos-projects.vercel.app")
             .AllowAnyMethod()
             .AllowCredentials()
             .AllowAnyHeader();
