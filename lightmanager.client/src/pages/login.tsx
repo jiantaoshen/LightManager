@@ -30,8 +30,11 @@ export default function Login() {
 
             navigate("/dashboard");
         } catch (error) {
-            console.error(error);
-            alert(error.message || "Login failed");
+            if (error instanceof Error) {
+                alert(error.message);
+            } else {
+                alert("Login failed");
+    }
         }
     };
 

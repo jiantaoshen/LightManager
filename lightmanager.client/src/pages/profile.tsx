@@ -39,7 +39,10 @@ export default function Profile() {
         if (!profile) return;
 
         setLoading(true);
+
         try {
+            if (!user) return;
+            
             await updateUsername({ fullName: userName });
 
             const updatedUser = {...user,fullName: userName};
@@ -48,7 +51,6 @@ export default function Profile() {
 
             localStorage.setItem("user", JSON.stringify(updatedUser));
         } catch (err) {
-            console.error(err);
             alert("Failed to update username");
         } finally {
             setLoading(false);
@@ -67,7 +69,11 @@ export default function Profile() {
         setCurrentPassword("");
         setNewPassword("");
     } catch (err) {
-        alert(err.message || "Password change failed");
+        if (err instanceof Error) {
+            alert(err.message);
+        } else {
+            alert("Password change failed");
+        }
     }
 };
 

@@ -90,7 +90,11 @@ export default function KanbanBoard() {
         if (!editProject) return;
 
         try {
-            const updated = await updateProject(editProject.id, { ...editProject, members: editMembers });
+            const updated = await updateProject(editProject.id, {
+                name: editProject.name,
+                description: editProject.description ?? "",
+                status: editProject.status,
+                members: editMembers});
 
             setProject(updated);
             setIsEditingProject(false);
@@ -298,7 +302,7 @@ export default function KanbanBoard() {
                                         description: "",
                                         status: "Todo",
                                         priority: "High",
-                                        dueDate: null,
+                                        dueDate: undefined,
                                         assignedUsers: []
                                     });
 
@@ -440,7 +444,7 @@ export default function KanbanBoard() {
                                 <Input label="Due Date"
                                     type="date"
                                     value={selectedTask.dueDate? new Date(selectedTask.dueDate).toLocaleDateString("sv-SE") : ""}
-                                    onChange={(value) => setSelectedTask({ ...selectedTask, dueDate: value ? new Date(value) : null })}
+                                    onChange={(value) => setSelectedTask({ ...selectedTask, dueDate: value ? new Date(value) : undefined })}
                                 />                               
                             </div>
 

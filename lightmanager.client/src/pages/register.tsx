@@ -37,8 +37,8 @@ export default function Register() {
 
             navigate("/dashboard");
         } catch (error) {
-            console.error(error);
-            alert(error.message || "Failed to register");
+            if (error instanceof Error) alert(error.message); 
+            else alert("Failed to register");
         }
     };
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { AuthContext, type User } from "./authContextCore";
+import { AuthContext, type User, type AuthContextType } from "./authContextCore";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(() => {
@@ -17,8 +17,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("user");
     }, []);
 
+    const value: AuthContextType = {
+        user,
+        login,
+        logout,
+        setUser
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, setUser }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

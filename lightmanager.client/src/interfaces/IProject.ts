@@ -1,7 +1,7 @@
 export interface Project {
     id: number;
     name: string;
-    description: string | null;
+    description?: string | null;
     owner: string;
     status: "Active" | "Archived";
     totalMembers: number;
