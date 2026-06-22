@@ -44,8 +44,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactApp", policy =>
     {
         policy
-            .WithOrigins(Environment.GetEnvironmentVariable("Vercel"))
-            .AllowAnyOrigin()
+            .WithOrigins(Environment.GetEnvironmentVariable("VERCEL"))
             .AllowAnyMethod()
             .AllowCredentials()
             .AllowAnyHeader();
