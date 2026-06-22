@@ -20,7 +20,7 @@ export async function findUserByEmail(email: string) {
 }
 
 export const getProfile = async () => {
-    const res = await fetch(`${API_URL}profile`, {
+    const res = await fetch(`${API_URL}/profile`, {
         headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
         }
