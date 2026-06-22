@@ -39,23 +39,19 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
     {
         policy
-            .WithOrigins("https://localhost:55440")
+            .WithOrigins("https://light-manager-cy806e07g-jiantaos-projects.vercel.app/")
             .AllowAnyMethod()
             .AllowCredentials()
             .AllowAnyHeader();
     });
 });
 
-
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
