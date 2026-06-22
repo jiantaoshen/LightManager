@@ -44,10 +44,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactApp", policy =>
     {
         policy
-            .WithOrigins(Environment.GetEnvironmentVariable("VERCEL"))
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://light-manager-rho.vercel.app"
+            )
             .AllowAnyMethod()
-            .AllowCredentials()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
