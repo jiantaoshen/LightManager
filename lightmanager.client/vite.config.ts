@@ -9,14 +9,5 @@ export default defineConfig({
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url))
         }
-    },
-    server: {
-        proxy: {
-            "/api": {
-                target: "https://lightmanager-production.up.railway.app",
-                changeOrigin: true,
-                secure: false
-            }
-        }
     }
 });

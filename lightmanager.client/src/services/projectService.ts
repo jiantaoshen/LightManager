@@ -3,7 +3,7 @@
     such as creating, updating, deleting projects, and managing project members.
 */
 
-const API_URL = "/api/projects";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/projects`;
 
 export async function getProjects() {
     const token = localStorage.getItem("token");
