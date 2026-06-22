@@ -1,4 +1,4 @@
-const API_URL = "/api";
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 export async function findUserByEmail(email: string) {
     const token = localStorage.getItem("token");
@@ -20,7 +20,7 @@ export async function findUserByEmail(email: string) {
 }
 
 export const getProfile = async () => {
-    const res = await fetch("/api/profile", {
+    const res = await fetch(`${API_URL}profile`, {
         headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
         }
@@ -29,7 +29,7 @@ export const getProfile = async () => {
 };
 
 export const updateUsername = async (data: { fullName: string }) => {
-    return await fetch("/api/profile/username", {
+    return await fetch(`${API_URL}/profile/username`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
@@ -40,7 +40,7 @@ export const updateUsername = async (data: { fullName: string }) => {
 };
 
 export const changePassword = async (data: {currentPassword: string;newPassword: string;}) => {
-    const res = await fetch("/api/profile/password", {
+    const res = await fetch(`${API_URL}/profile/password`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 import { type Task } from "../interfaces/ITask";
 
-const API_URL = "/api/projects";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/projects`;
 
 export async function getTasks(projectId: number) {
     const res = await fetch(`${API_URL}/${projectId}/tasks`);
