@@ -1,9 +1,12 @@
 import preview from "../assets/preview.png"
 import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
+
 
 export default function IntroPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     return (
       <>
@@ -25,33 +28,31 @@ export default function IntroPage() {
                     Plan projects, track progress, and keep your team aligned without the complexity of traditional project management and dedicate more time to delivering meaningful work.
                 </p>
 
-                        <div className="flex flex-wrap gap-4">
-                            <Button onClick={() => navigate("/login")}>Start Free</Button>
-
-                  <Button variant="ghost">Book a Demo</Button>
+                <div className="flex flex-wrap gap-4">
+                    <Button onClick={() => navigate(user ? "/dashboard" : "/login")}>Start Free</Button>
                 </div>
 
-                            <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">
-                                <span>✓ Powerful enough for growing teams.</span>
-                        <span>✓ Simple enough for everyone.</span>
-                          <span>✓ Setup in minutes</span>
+                <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">
+                     <span>✓ Powerful enough for growing teams.</span>
+                     <span>✓ Simple enough for everyone.</span>
+                     <span>✓ Setup in minutes</span>
                 </div>
               </div>
 
-                      {/* Dashboard Preview */}
-                      <div className="relative flex justify-center lg:justify-end">
-                          <div className="w-full max-w-4xl lg:max-w-5xl">
-                              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-                                  <img
-                                      src={preview}
-                                      alt="Dashboard Preview"
-                                      className="w-full h-auto scale-[1.05]"
-                                  />
-                              </div>
-                          </div>
-                      </div>
-                      </div>
-                </section>
+                    {/* Dashboard Preview */}
+                    <div className="relative flex justify-center lg:justify-end">
+                        <div className="w-full max-w-4xl lg:max-w-5xl">
+                            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+                                <img
+                                    src={preview}
+                                    alt="Dashboard Preview"
+                                    className="w-full h-auto scale-[1.05]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+            </section>
       </>
   );
 }
