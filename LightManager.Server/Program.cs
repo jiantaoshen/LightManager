@@ -46,7 +46,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:5173",
-                "https://light-manager-rho.vercel.app"
+                "https://light-manager-rho.vercel.app",
+                "https://thankful-beach-0211add0f.7.azurestaticapps.net/"
             )
             .AllowAnyMethod()
             .AllowAnyHeader()
