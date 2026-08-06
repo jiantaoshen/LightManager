@@ -49,8 +49,7 @@ builder.Services.AddCors(options =>
                 "https://thankful-beach-0211add0f.7.azurestaticapps.net"
             )
             .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyHeader();
     });
 });
 
@@ -68,13 +67,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
 app.UseCors("ReactApp");
+
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapMethods("{*path}", new[] { "OPTIONS" }, () =>
+{
+    return Results.Ok();
+});
 
 app.MapControllers();
 
