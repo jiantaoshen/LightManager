@@ -40,7 +40,7 @@ complex enterprise-level tools, this application focuses on simplicity, usabilit
 * Neon
 
 ## Authenticaation Flow
-User Login(Vercel) -> ASP.NET Identity Validation(Railway) -> Database(Neon) -> JWT Token Generated (Azure) -> Token Stored in Local Storage (Vercel) -> Protected API Request (Azure)
+User Login(Vercel) -> ASP.NET Identity Validation(Azure) -> Database(Neon) -> JWT Token Generated (Azure) -> Token Stored in Local Storage (Vercel) -> Protected API Request (Azure)
 
 ## Future Improvement
 * AI generate tasks according the description of project
