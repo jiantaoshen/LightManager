@@ -4,7 +4,7 @@ LightManager is an open-source web-based application designed to help small to m
 complex enterprise-level tools, this application focuses on simplicity, usability, and a clean user experience, allowing users to manage projects effectively without unnecessary features or a steep learning curve.
 
 ## Updates (2026 August)
-Change hosting platform from vercel and render to Microsoft Azure Free Tier.
+Change hosting platform from vercel, render and Neon to Microsoft Azure Free Tier.
 
 ## Page
 [https://thankful-beach-0211add0f.7.azurestaticapps.net](https://thankful-beach-0211add0f.7.azurestaticapps.net)
@@ -31,19 +31,16 @@ Change hosting platform from vercel and render to Microsoft Azure Free Tier.
 * ASP.NET Identity
 * JWT Authentication
 
- ### Database
- * PosetgreSQL
-
 ## Deployment
 ### Frontend
 * Microsoft Azure (Static Web Apps Free Tier)
 ### Backend
 * Microsoft Azure (App Service Free Tier)
 ### Database
-* Neon
+* Azure SQL Database (Free Tier)
 
 ## Authenticaation Flow
-User Login -> ASP.NET Identity Validation -> Database(Neon) -> JWT Token Generated -> Token Stored in Local Storageb -> Protected API Request
+User Login -> ASP.NET Identity Validation -> Database-> JWT Token Generated -> Token Stored in Local Storageb -> Protected API Request
 
 ## Future Improvement
 * AI generate tasks according the description of project
