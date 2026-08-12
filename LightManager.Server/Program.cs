@@ -43,11 +43,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
     {
-        policy
-            .WithOrigins(
-                "https://light-manager-rho.vercel.app",
-                "https://thankful-beach-0211add0f.7.azurestaticapps.net"
-            )
+        policy.WithOrigins("https://thankful-beach-0211add0f.7.azurestaticapps.net")
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
