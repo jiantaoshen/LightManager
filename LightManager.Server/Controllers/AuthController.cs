@@ -25,6 +25,8 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDTO dto)
     {
+        Console.WriteLine("REGISTER endpoint called");
+
         var user = new ApplicationUser
         {
             UserName = dto.FullName,
@@ -47,6 +49,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDTO dto)
     {
+        Console.WriteLine("Login endpoint called");
+
         var user = await _userManager.FindByEmailAsync(dto.Email);
 
         if (user == null)
