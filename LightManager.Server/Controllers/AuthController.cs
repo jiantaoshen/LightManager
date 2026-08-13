@@ -21,7 +21,13 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
-    
+    [HttpGet("test")]
+    public IActionResult Test()
+    {
+        return Ok("API is running");
+    }
+
+
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDTO dto)
     {
