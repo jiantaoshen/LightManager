@@ -27,6 +27,28 @@ public class AuthController : ControllerBase
         return Ok("API is running");
     }
 
+    [HttpGet("db-test")]
+    public async Task<IActionResult> DbTest()
+    {
+        try
+        {
+            var user = await _userManager.FindByEmailAsync("1@test.se");
+
+            return Ok(new
+            {
+                database = "OK",
+                userFound = user != null
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                message = ex.Message,
+                inner = ex.InnerException?.Message
+            });
+        }
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDTO dto)
