@@ -6,8 +6,16 @@ complex enterprise-level tools, this application focuses on simplicity, usabilit
 ## Updates (2026 August)
 Change hosting platform from vercel and render to Microsoft Azure Free Tier.
 
-## Page
+## Live Demo
 [https://thankful-beach-0211add0f.7.azurestaticapps.net](https://thankful-beach-0211add0f.7.azurestaticapps.net)
+
+## Demo Account 
+You can use the following account to test the application:
+
+Email: 1@test.se
+Password: Abc_123
+
+Note: The application is deployed using a free-tier cloud service. A cold start is normal when the backend has been inactive for some time. The first login or API request may therefore take 1–2 minutes. Once the backend is running, subsequent requests should respond normally.
 
 ## Features
 * Authentication
