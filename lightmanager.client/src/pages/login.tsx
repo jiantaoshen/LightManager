@@ -1,95 +1,56 @@
 import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import { useAuth } from "../context/useAuth";
-import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/authService";
-import Button from "../components/Button";
 
 export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const { login } = useAuth();
-    const navigate = useNavigate();
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        try {
-            const result = await loginUser({
-                email,
-                password,
-            });
-
-            localStorage.setItem("token", result.token);
-
-            login({
-                fullName: result.fullName,
-                email: result.email,
-                userId: result.userId,
-            });
-
-            navigate("/dashboard");
-        } catch (error) {
-            if (error instanceof Error) {
-                alert(error.message);
-            } else {
-                alert("Login failed");
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await loginUser({ email, password });
+      localStorage.setItem("token", result.token);
+      login({ fullName: result.fullName, email: result.email, userId: result.userId });
+      const destination = (location.state as { from?: string } | null)?.from ?? "/today";
+      navigate(destination, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
     }
-        }
-    };
+  };
 
-    return (
-        <div className="flex justify-center pt-10 pb-10">
-            <div className="w-full max-w-md rounded bg-white px-10 py-10">
-                <h1 className="mb-8 text-center text-3xl font-bold text-black">
-                    Login
-                </h1>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-black">
-                            Email
-                        </label>
-
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-black"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-black">
-                            Password
-                        </label>
-
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-black"
-                            required
-                        />
-                    </div>
-
-                    
-                    <Button type="submit" variant = "primary" className="w-full">
-                        Login
-                    </Button>
-                </form>
-
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Don't have an account?{" "}
-                    <Link
-                        to="/register"
-                        className="font-medium text-black hover:underline"
-                    >
-                        Register
-                    </Link>
-                </p>
-            </div>
-        </div>
-    );
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-muted/40 px-4 py-10">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <Link to="/" className="mb-5 text-sm font-semibold text-primary">LightManager</Link>
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to your personal workspace.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></div>
+            <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" /></div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</Button>
+          </form>
+          <p className="mt-6 text-center text-sm text-muted-foreground">New here? <Link to="/register" className="font-medium text-foreground underline-offset-4 hover:underline">Create an account</Link></p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

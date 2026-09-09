@@ -2,55 +2,46 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace LightManager.Server.Data
+namespace LightManager.Server.Data;
+
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
-    public class ApplicationDbContext : IdentityDbContext<LightManager.Server.Data.ApplicationUser>
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options): base(options)
+    }
+
+    public DbSet<TaskModel> Tasks => Set<TaskModel>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<TaskModel>(entity =>
         {
-        }
+            entity.Property(task => task.Title)
+                .HasMaxLength(200)
+                .IsRequired();
 
-        public DbSet<ProjectModel> Projects => Set<ProjectModel>();
+            entity.Property(task => task.Description)
+                .HasMaxLength(4000);
 
-        public DbSet<ProjectMemberModel> ProjectMembers => Set<ProjectMemberModel>();
+            entity.Property(task => task.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
 
-        public DbSet<TaskModel> Tasks => Set<TaskModel>();
+            entity.Property(task => task.Priority)
+                .HasConversion<string>()
+                .HasMaxLength(20);
 
-        public DbSet<TaskAssigneeModel> TaskAssignees => Set<TaskAssigneeModel>();
+            entity.HasOne(task => task.User)
+                .WithMany(user => user.Tasks)
+                .HasForeignKey(task => task.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<ProjectMemberModel>()
-                .HasKey(pm => new{pm.ProjectId,pm.UserId});
-
-            modelBuilder.Entity<ProjectMemberModel>()
-                .HasOne(pm => pm.Project)
-                .WithMany(p => p.Members)
-                .HasForeignKey(pm => pm.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<ProjectMemberModel>()
-                .HasOne(pm => pm.User)
-                .WithMany(u => u.ProjectMembers)
-                .HasForeignKey(pm => pm.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<TaskAssigneeModel>()
-                .HasKey(x => new { x.TaskId, x.UserId });
-
-            modelBuilder.Entity<TaskAssigneeModel>()
-                .HasOne(x => x.Task)
-                .WithMany(t => t.AssignedUsers)
-                .HasForeignKey(x => x.TaskId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<TaskAssigneeModel>()
-                .HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-        }
+            // These indexes support the main screens: Today, Inbox and Calendar.
+            entity.HasIndex(task => new { task.UserId, task.DueDate });
+            entity.HasIndex(task => new { task.UserId, task.Status });
+        });
     }
 }

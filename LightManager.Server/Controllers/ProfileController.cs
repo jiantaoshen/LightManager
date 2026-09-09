@@ -1,63 +1,72 @@
 ﻿using LightManager.Server.Data;
 using LightManager.Server.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LightManager.Server.Controllers
+namespace LightManager.Server.Controllers;
+
+[Authorize]
+[ApiController]
+[Route("api/profile")]
+public class ProfileController : ControllerBase
 {
-    [ApiController]
-    [Route("api/profile")]
-    public class ProfileController : ControllerBase
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public ProfileController(UserManager<ApplicationUser> userManager)
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        _userManager = userManager;
+    }
 
-        public ProfileController(UserManager<ApplicationUser> userManager)
+    [HttpGet]
+    public async Task<IActionResult> GetProfile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        return Ok(new
         {
-            _userManager = userManager;
-        }
+            user.Id,
+            userName = user.DisplayName,
+            fullName = user.DisplayName,
+            user.Email,
+            user.CreatedAt
+        });
+    }
 
-        // GET current user
-        [HttpGet]
-        public async Task<IActionResult> GetProfile()
-        {
-            var user = await _userManager.GetUserAsync(User);
+    [HttpPut("username")]
+    public async Task<IActionResult> UpdateDisplayName(UpdateProfileDTO dto)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
 
-            return Ok(new
-            {
-                user.Id,
-                user.UserName,
-                user.Email
-            });
-        }
+        var displayName = dto.FullName.Trim();
+        if (displayName.Length == 0)
+            return BadRequest(new { message = "Name is required." });
 
-        // UPDATE username
-        [HttpPut("username")]
-        public async Task<IActionResult> UpdateUsername(UpdateProfileDTO dto)
-        {
-            var user = await _userManager.GetUserAsync(User);
+        user.DisplayName = displayName;
+        var result = await _userManager.UpdateAsync(user);
 
-            user.UserName = dto.FullName;
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
 
-            await _userManager.UpdateAsync(user);
+        return Ok(new { fullName = user.DisplayName });
+    }
 
-            return Ok();
-        }
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordDTO dto)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
 
-        // CHANGE PASSWORD
-        [HttpPut("password")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDTO dto)
-        {
-            var user = await _userManager.GetUserAsync(User);
+        var result = await _userManager.ChangePasswordAsync(
+            user,
+            dto.CurrentPassword,
+            dto.NewPassword);
 
-            var result = await _userManager.ChangePasswordAsync(
-                user,
-                dto.CurrentPassword,
-                dto.NewPassword
-            );
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
 
-            if (!result.Succeeded)return BadRequest(result.Errors);
-
-            return Ok();
-        }
+        return NoContent();
     }
 }

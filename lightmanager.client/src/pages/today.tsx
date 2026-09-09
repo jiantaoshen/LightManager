@@ -1,0 +1,50 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { QuickAdd } from "../components/tasks/quick-add";
+import { TaskRow } from "../components/tasks/task-row";
+import { usePersonalTasks } from "../hooks/usePersonalTasks";
+import { formatLongDate, todayKey, toDateKey } from "../lib/date";
+
+export default function TodayPage() {
+  const { tasks, loading, error, addTask, toggleTask, removeTask } = usePersonalTasks();
+  const today = todayKey();
+  const todayTasks = tasks.filter((task) => task.dueDate && toDateKey(task.dueDate) === today);
+  const open = todayTasks.filter((task) => task.status !== "Done");
+  const done = todayTasks.filter((task) => task.status === "Done");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm font-medium text-primary">Today</p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">{formatLongDate(new Date())}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Keep today small. Capture the rest in Inbox.</p>
+      </div>
+
+      <QuickAdd defaultDate={today} onAdd={addTask} />
+
+      {error && <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</div>}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Today</CardTitle>
+          <CardDescription>{open.length} open · {done.length} completed</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Loading tasks…</p>
+          ) : todayTasks.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="font-medium">Nothing planned for today.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Add one important thing above.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {[...open, ...done].map((task) => (
+                <TaskRow key={task.id} task={task} onToggle={() => void toggleTask(task)} onDelete={() => void removeTask(task.id)} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,73 +1,58 @@
-import { type Task } from "../interfaces/ITask";
+import type { PersonalTaskDraft, Task } from "../interfaces/ITask";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/projects`;
+const API_URL = `${import.meta.env.VITE_API_URL}/api/tasks`;
 
-export async function getTasks(projectId: number) {
-    const res = await fetch(`${API_URL}/${projectId}/tasks`);
-    return res.json();
+function authHeaders(json = false): HeadersInit {
+  const token = localStorage.getItem("token");
+  return {
+    ...(json ? { "Content-Type": "application/json" } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
-export async function createTask(projectId: number, task: Task) {
-    const token = localStorage.getItem("token");
+async function readResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(error || `Request failed (${res.status})`);
+  }
 
-    const res = await fetch(`${API_URL}/${projectId}/tasks`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(task),
-    });
-
-    if (!res.ok) {
-        const error = await res.json().catch(() => null);
-
-        console.error("Status:", res.status);
-        console.error("Error:", error);
-
-        throw new Error(JSON.stringify(error));
-    }
-
-    return res.json();
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }
 
-export async function updateTask(projectId: number, taskId: number, task: Task) {
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(
-        `${API_URL}/${projectId}/tasks/${taskId}`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(task),
-        }
-    );
-
-    if (!res.ok) {
-        const error = await res.text();
-        console.error("Status:", res.status);
-        console.error("Response:", error);
-        throw new Error(error);
-    }
-
-    return res.json();
+export async function getTasks(): Promise<Task[]> {
+  const res = await fetch(API_URL, { headers: authHeaders() });
+  return readResponse<Task[]>(res);
 }
 
-export async function deleteTask(projectId: number, taskId: number) {
-    const token = localStorage.getItem("token");
+export async function createTask(draft: PersonalTaskDraft): Promise<Task> {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: authHeaders(true),
+    body: JSON.stringify(draft),
+  });
+  return readResponse<Task>(res);
+}
 
-    const res = await fetch(
-        `${API_URL}/${projectId}/tasks/${taskId}`,
-        {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }
-    );
+export async function updateTask(taskId: number, task: Task): Promise<Task> {
+  const res = await fetch(`${API_URL}/${taskId}`, {
+    method: "PUT",
+    headers: authHeaders(true),
+    body: JSON.stringify({
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.dueDate,
+    }),
+  });
+  return readResponse<Task>(res);
+}
 
-    if (!res.ok) throw new Error("Delete task failed");
+export async function deleteTask(taskId: number): Promise<void> {
+  const res = await fetch(`${API_URL}/${taskId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  return readResponse<void>(res);
 }
