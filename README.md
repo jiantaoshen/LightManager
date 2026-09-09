@@ -212,3 +212,150 @@ The goal of the project is to build a small application that I can genuinely use
 - Cloud deployment
 - Responsive and mobile-first design
 - Cross-platform application development
+
+## Legacy Azure Static Web Apps Deployment - Abandoned
+
+The original LightManager frontend was previously deployed using Azure Static Web Apps at:
+
+`https://thankful-beach-0211add0f.7.azurestaticapps.net`
+
+LightManager has since been redesigned and migrated to a new deployment architecture. The current application is available at:
+
+**https://lightmanager.jiantao.dev**
+
+The old Azure Static Web App was intended to receive one final update that would redirect visitors from the legacy URL to the new domain. However, the deployment resource could no longer be updated successfully.
+
+### What I Tried
+
+I attempted several methods to perform the final redirect deployment.
+
+#### 1. Azure Static Web Apps CLI
+
+I created a minimal static redirect site containing only:
+
+* `index.html`
+* `staticwebapp.config.json`
+
+and attempted to deploy it using:
+
+```powershell
+swa deploy . --env production
+```
+
+The deployment failed through `StaticSitesClient`.
+
+Running the CLI with verbose logging:
+
+```powershell
+swa deploy --env production . --dry-run --verbose silly
+```
+
+revealed the underlying Azure response:
+
+```text
+BadRequest
+Reason: No matching static site found.
+```
+
+#### 2. Resetting the Deployment Token
+
+The deployment token for the original Static Web App was reset in Azure Portal and added again as:
+
+```text
+SWA_CLI_DEPLOYMENT_TOKEN
+```
+
+The same deployment error continued.
+
+#### 3. GitHub Actions Deployment
+
+I then attempted to bypass the local SWA CLI by using:
+
+```text
+Azure/static-web-apps-deploy@v1
+```
+
+A GitHub repository secret was configured as:
+
+```text
+AZURE_STATIC_WEB_APPS_API_TOKEN
+```
+
+After verifying that GitHub Actions could access the secret successfully, the deployment reached Azure but was rejected with:
+
+```text
+BadRequest
+
+Reason:
+No matching Static Web App was found or the api key was invalid.
+```
+
+The redirect files themselves were successfully generated and detected by the deployment action, so the problem was not caused by the application files or build configuration.
+
+#### 4. Azure Deployment Configuration
+
+I attempted to inspect and change the deployment authorization configuration of the original Static Web App.
+
+However, the relevant configuration options in Azure Portal were disabled/read-only and could not be changed.
+
+#### 5. Azure CLI
+
+I installed Azure CLI and attempted to manage the resource directly.
+
+Local authentication was complicated by tenant/MFA issues, so I later switched to Azure Cloud Shell.
+
+The plan was to disconnect the existing source-control integration and reconnect the Static Web App to the current LightManager repository:
+
+```text
+az staticwebapp disconnect
+az staticwebapp reconnect
+```
+
+However, the disconnect operation also failed, preventing the source-control relationship from being recreated.
+
+## Final Decision
+
+After trying:
+
+* SWA CLI deployment
+* Deployment token reset
+* GitHub Actions deployment
+* Azure Portal deployment configuration
+* Azure CLI
+* Azure Cloud Shell
+* Source-control disconnect/reconnect
+
+I decided not to spend additional development time recovering the legacy Azure Static Web Apps resource.
+
+The old deployment is therefore considered **abandoned**.
+
+This does not affect the current LightManager application.
+
+The actively maintained version now uses:
+
+```text
+Frontend
+Vercel
+https://lightmanager.jiantao.dev
+
+Backend
+Microsoft Azure App Service
+
+Database
+PostgreSQL / Neon
+```
+
+All documentation, portfolio links, and future development will use:
+
+**https://lightmanager.jiantao.dev**
+
+The legacy `azurestaticapps.net` URL should no longer be considered an active deployment endpoint.
+
+## Why I Chose to Stop
+
+The purpose of the old deployment was only to preserve an outdated URL and redirect it to the current application.
+
+At this point, recovering the legacy Azure resource would require significantly more effort than the value provided by maintaining that URL.
+
+Rather than continuing to debug infrastructure that is no longer part of the application's architecture, I chose to focus development effort on the current LightManager deployment and future product improvements.
+
