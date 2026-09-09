@@ -11,6 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check deployment token
+        env:
+          DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        run: |
+          if [ -z "$DEPLOYMENT_TOKEN" ]; then
+            echo "AZURE_STATIC_WEB_APPS_API_TOKEN is missing or unavailable."
+            exit 1
+          fi
+
+          echo "Deployment token is available."
+
       - name: Create redirect site
         shell: bash
         run: |
@@ -56,7 +67,7 @@ jobs:
           }
           EOF
 
-      - name: Deploy redirect to old Azure Static Web App
+      - name: Deploy redirect to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
