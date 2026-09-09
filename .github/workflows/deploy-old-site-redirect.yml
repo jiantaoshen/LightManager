@@ -11,16 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check deployment token
+      - name: Verify deployment token
+        shell: bash
         env:
-          DEPLOYMENT_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         run: |
-          if [ -z "$DEPLOYMENT_TOKEN" ]; then
-            echo "AZURE_STATIC_WEB_APPS_API_TOKEN is missing or unavailable."
+          if [ -z "$SWA_TOKEN" ]; then
+            echo "❌ AZURE_STATIC_WEB_APPS_API_TOKEN is unavailable"
             exit 1
           fi
 
-          echo "Deployment token is available."
+          echo "✅ Deployment token is available"
+          echo "Token length: ${#SWA_TOKEN}"
 
       - name: Create redirect site
         shell: bash
@@ -33,21 +35,17 @@ jobs:
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
             <meta
               http-equiv="refresh"
               content="0; url=https://lightmanager.jiantao.dev"
             />
-
             <meta name="robots" content="noindex" />
-
             <title>LightManager has moved</title>
 
             <script>
               window.location.replace("https://lightmanager.jiantao.dev");
             </script>
           </head>
-
           <body>
             <p>
               LightManager has moved to
@@ -67,7 +65,7 @@ jobs:
           }
           EOF
 
-      - name: Deploy redirect to Azure Static Web Apps
+      - name: Deploy redirect
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
