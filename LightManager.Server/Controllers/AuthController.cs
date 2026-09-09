@@ -1,72 +1,58 @@
-﻿using LightManager.Server.Data;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using LightManager.Server.Data;
 using LightManager.Server.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
+namespace LightManager.Server.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _configuration;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+    public AuthController(
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration)
     {
         _userManager = userManager;
         _configuration = configuration;
     }
 
-    [HttpGet("test")]
-    public IActionResult Test()
-    {
-        return Ok("API is running");
-    }
-
-    [HttpGet("db-test")]
-    public async Task<IActionResult> DbTest()
-    {
-        try
-        {
-            var user = await _userManager.FindByEmailAsync("1@test.se");
-
-            return Ok(new
-            {
-                database = "OK",
-                userFound = user != null
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new
-            {
-                message = ex.Message,
-                inner = ex.InnerException?.Message
-            });
-        }
-    }
+    [HttpGet("health")]
+    public IActionResult Health()
+        => Ok(new { status = "ok" });
 
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDTO dto)
     {
+        var email = dto.Email.Trim();
+        var displayName = dto.FullName.Trim();
+
+        if (email.Length == 0 || displayName.Length == 0)
+            return BadRequest(new { message = "Name and email are required." });
+
+        // Email is used as the Identity username so two people may share the
+        // same display name without violating Identity's unique username rule.
         var user = new ApplicationUser
         {
-            UserName = dto.FullName,
-            Email = dto.Email,
+            UserName = email,
+            Email = email,
+            DisplayName = displayName,
+            CreatedAt = DateTime.UtcNow
         };
 
         var result = await _userManager.CreateAsync(user, dto.Password);
 
         if (!result.Succeeded)
-        {
             return BadRequest(result.Errors);
-        }
 
-        return Ok(new
+        return StatusCode(StatusCodes.Status201Created, new
         {
             message = "User created successfully"
         });
@@ -75,41 +61,43 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDTO dto)
     {
-        var user = await _userManager.FindByEmailAsync(dto.Email);
+        var user = await _userManager.FindByEmailAsync(dto.Email.Trim());
 
-        if (user == null)
-            return Unauthorized("Invalid email or password.");
-
-        var validPassword = await _userManager.CheckPasswordAsync(user, dto.Password);
-
-        if (!validPassword)
-            return Unauthorized("Invalid email or password.");
+        if (user is null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+            return Unauthorized(new { message = "Invalid email or password." });
 
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.UserName)
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+            new Claim(ClaimTypes.Name, user.DisplayName)
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")));
+        var jwtKey = GetRequiredSetting("JWT_KEY");
+        var issuer = GetRequiredSetting("JWT_ISSUER");
+        var audience = GetRequiredSetting("JWT_AUDIENCE");
 
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: Environment.GetEnvironmentVariable("JWT_ISSUER"),
-            audience: Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            issuer: issuer,
+            audience: audience,
             claims: claims,
             expires: DateTime.UtcNow.AddHours(2),
-            signingCredentials: creds
-        );
+            signingCredentials: credentials);
 
         return Ok(new
         {
             token = new JwtSecurityTokenHandler().WriteToken(token),
-            fullName = user.UserName,    
+            fullName = user.DisplayName,
             email = user.Email,
             userId = user.Id
         });
     }
+
+    private string GetRequiredSetting(string key)
+        => _configuration[key]
+           ?? Environment.GetEnvironmentVariable(key)
+           ?? throw new InvalidOperationException($"Missing required configuration: {key}");
 }

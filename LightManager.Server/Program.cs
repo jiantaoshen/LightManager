@@ -1,82 +1,96 @@
-using LightManager.Server.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
+using LightManager.Server.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>options.UseNpgsql(connectionString));
+var jwtKey = builder.Configuration["JWT_KEY"]
+    ?? Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? throw new InvalidOperationException("JWT_KEY is missing.");
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>() // Add roles support
+var jwtIssuer = builder.Configuration["JWT_ISSUER"]
+    ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
+    ?? throw new InvalidOperationException("JWT_ISSUER is missing.");
+
+var jwtAudience = builder.Configuration["JWT_AUDIENCE"]
+    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+    ?? throw new InvalidOperationException("JWT_AUDIENCE is missing.");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedAccount = false;
+    })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services
+    .AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
 
-        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-    };
-});
+var configuredOrigins = (builder.Configuration["FRONTEND_ORIGINS"]
+        ?? Environment.GetEnvironmentVariable("FRONTEND_ORIGINS")
+        ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("ReactApp", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins("https://thankful-beach-0211add0f.7.azurestaticapps.net")
+        policy.WithOrigins(configuredOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
 });
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Keeps the API contract friendly to React: "Todo", "Done", "High", etc.
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-app.UseDefaultFiles();
-app.MapStaticAssets();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{
     app.MapOpenApi();
-}
-
-app.UseCors("ReactApp");
 
 app.UseHttpsRedirection();
-
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapMethods("{*path}", new[] { "OPTIONS" }, () =>
-{
-    return Results.Ok();
-});
-
 app.MapControllers();
-
-app.MapFallbackToFile("/index.html");
 
 app.Run();

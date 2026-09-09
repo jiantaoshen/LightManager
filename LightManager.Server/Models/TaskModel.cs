@@ -1,30 +1,44 @@
 ﻿using LightManager.Server.Data;
 
-namespace LightManager.Server.Models
+namespace LightManager.Server.Models;
+
+public enum TaskItemStatus
 {
-    public class TaskModel
-    {
-        public int Id { get; set; }
+    Todo,
+    Done
+}
 
-        public string Title { get; set; } = string.Empty;
+public enum TaskPriority
+{
+    Low,
+    Medium,
+    High
+}
 
-        public string Description { get; set; } = string.Empty;
+public class TaskModel
+{
+    public int Id { get; set; }
 
-        public string Status { get; set; } = "ToDo";
+    public string Title { get; set; } = string.Empty;
 
-        public string Priority { get; set; } = "Medium";
+    public string? Description { get; set; }
 
-        public DateTime? DueDate { get; set; }
+    public TaskItemStatus Status { get; set; } = TaskItemStatus.Todo;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
-        // Foreign key to the project this task belongs to
-        public int ProjectId { get; set; }
+    // A calendar date, not a moment in time. This avoids timezone drift
+    // when the same task is opened from web and mobile clients.
+    public DateOnly? DueDate { get; set; }
 
-        public ProjectModel Project { get; set; } = null!;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        //Multiple users can be assigned to a task, so we use a many-to-many relationship
-        public List<TaskAssigneeModel> AssignedUsers { get; set; } = new(); 
-    }
+    public DateTime? CompletedAt { get; set; }
+
+    // Every task belongs directly to one authenticated user.
+    public string UserId { get; set; } = string.Empty;
+
+    public ApplicationUser User { get; set; } = null!;
 }

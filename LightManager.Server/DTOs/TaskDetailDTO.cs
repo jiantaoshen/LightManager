@@ -1,18 +1,24 @@
-﻿namespace LightManager.Server.DTOs
+﻿using LightManager.Server.Models;
+
+namespace LightManager.Server.DTOs;
+
+public class TaskDetailDTO
 {
-    public class TaskDetailDTO
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
+    public int Id { get; set; }
 
-        public string? Description { get; set; }
+    public string Title { get; set; } = string.Empty;
 
-        public string Status { get; set; } = "Todo";
+    public string? Description { get; set; }
 
-        public string Priority { get; set; } = "Medium";
+    public TaskItemStatus Status { get; set; }
 
-        public List<TaskUserDTO> AssignedUsers { get; set; } = new();
+    public TaskPriority Priority { get; set; }
 
-        public DateTime? DueDate { get; set; }
-    }
+    public DateOnly? DueDate { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
+
+    public DateTime? CompletedAt { get; set; }
 }
