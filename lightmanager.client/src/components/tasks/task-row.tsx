@@ -22,8 +22,17 @@ export function TaskRow({ task, onToggle, onDelete }: { task: Task; onToggle: ()
           <p className={`text-sm font-medium text-foreground ${task.status === "Done" ? "text-muted-foreground line-through" : ""}`}>
             {task.title}
           </p>
-          {task.priority === "High" && <Badge variant="destructive">High</Badge>}
-          {task.priority === "Medium" && <Badge variant="secondary">Medium</Badge>}
+          {task.priority === "High" && (
+            <Badge variant="destructive">
+              Must
+            </Badge>
+          )}
+
+          {task.priority === "Medium" && (
+            <Badge className="bg-yellow-100 text-yellow-800">
+              Priority
+            </Badge>
+          )}
         </div>
         {(task.description || task.dueDate) && (
           <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">

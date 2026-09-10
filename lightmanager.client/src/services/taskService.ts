@@ -56,3 +56,11 @@ export async function deleteTask(taskId: number): Promise<void> {
   });
   return readResponse<void>(res);
 }
+
+export async function getTrialTasks(): Promise<Task[]> {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/trial/tasks`,
+  );
+
+  return readResponse<Task[]>(res);
+}

@@ -39,7 +39,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(task => task.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // These indexes support the main screens: Today, Inbox and Calendar.
+            // These indexes support the main task views: Today, unscheduled tasks, and Calendar.
             entity.HasIndex(task => new { task.UserId, task.DueDate });
             entity.HasIndex(task => new { task.UserId, task.Status });
         });

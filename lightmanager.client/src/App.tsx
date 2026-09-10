@@ -2,15 +2,18 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "./components/AppShell";
 import RequireAuth from "./components/RequireAuth";
 import CalendarPage from "./pages/calendar";
-import InboxPage from "./pages/inbox";
 import IntroPage from "./pages/intro";
 import Login from "./pages/login";
 import ProfilePage from "./pages/profile";
 import Register from "./pages/register";
 import TasksPage from "./pages/tasks";
 import TodayPage from "./pages/today";
+import { useAuth } from "./context/useAuth";
 
 export default function App() {
+
+  const { isTrial } = useAuth();
+
   return (
     <BrowserRouter>
       <Routes>
@@ -21,10 +24,18 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppShell />}>
             <Route path="/today" element={<TodayPage />} />
-            <Route path="/inbox" element={<InboxPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/profile"
+              element={
+                isTrial ? (
+                  <Navigate to="/today" replace />
+                ) : (
+                  <ProfilePage />
+                )
+              }
+            />
             <Route path="/dashboard" element={<Navigate to="/today" replace />} />
           </Route>
         </Route>
