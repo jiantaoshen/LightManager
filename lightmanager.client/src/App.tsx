@@ -8,8 +8,12 @@ import ProfilePage from "./pages/profile";
 import Register from "./pages/register";
 import TasksPage from "./pages/tasks";
 import TodayPage from "./pages/today";
+import { useAuth } from "./context/useAuth";
 
 export default function App() {
+
+  const { isTrial } = useAuth();
+
   return (
     <BrowserRouter>
       <Routes>
@@ -22,7 +26,16 @@ export default function App() {
             <Route path="/today" element={<TodayPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/profile"
+              element={
+                isTrial ? (
+                  <Navigate to="/today" replace />
+                ) : (
+                  <ProfilePage />
+                )
+              }
+            />
             <Route path="/dashboard" element={<Navigate to="/today" replace />} />
           </Route>
         </Route>

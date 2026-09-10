@@ -5,7 +5,15 @@ import { useAuth } from "../context/useAuth";
 
 export default function IntroPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const {
+    user,
+    enterTrial,
+  } = useAuth();
+
+  const startTrial = () => {
+    enterTrial();
+    navigate("/today");
+  };
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -19,7 +27,44 @@ export default function IntroPage() {
           <div className="mb-5 inline-flex rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">Personal tasks · calendar</div>
           <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">A lighter way to remember what matters.</h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Capture quickly on your phone, plan your day, and pick things up later from your computer. No team dashboards. No project-management overhead.</p>
-          <div className="mt-8 flex gap-3"><Button size="lg" onClick={() => navigate(user ? "/today" : "/register")}>{user ? "Go to Today" : "Create account"}</Button><Button size="lg" variant="outline" onClick={() => navigate("/login")}>Sign in</Button></div>
+          <div className="mt-8 flex flex-wrap gap-3">
+          <Button
+            size="lg"
+            onClick={() =>
+              navigate(
+                user
+                  ? "/today"
+                  : "/register",
+              )
+            }
+          >
+            {user
+              ? "Go to Today"
+              : "Create account"}
+          </Button>
+
+          {!user && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={startTrial}
+            >
+              Try demo
+            </Button>
+          )}
+
+          {!user && (
+            <Button
+              size="lg"
+              variant="ghost"
+              onClick={() =>
+                navigate("/login")
+              }
+            >
+              Sign in
+            </Button>
+          )}
+        </div>
         </div>
 
         <Card className="overflow-hidden p-3 shadow-xl">
