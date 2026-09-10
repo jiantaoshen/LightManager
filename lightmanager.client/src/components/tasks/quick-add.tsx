@@ -1,25 +1,46 @@
-import { useState } from "react";
+/**
+ * File: components/tasks/quick-add.tsx
+ * Purpose: Provides the compact task creation form used by task-planning views.
+ * Component: QuickAdd.
+ * Function: submit.
+ */
+
+import { useEffect, useState } from "react";
 import type { PersonalTaskDraft, Priority } from "../../interfaces/ITask";
+import { PRIORITY_OPTIONS } from "../../lib/priority";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 
-export function QuickAdd({ defaultDate, onAdd }: { defaultDate?: string; onAdd: (draft: PersonalTaskDraft) => Promise<unknown> }) {
+type QuickAddProps = {
+  defaultDate?: string;
+  onAdd: (draft: PersonalTaskDraft) => Promise<unknown>;
+};
+
+export function QuickAdd({ defaultDate, onAdd }: QuickAddProps) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState(defaultDate ?? "");
   const [priority, setPriority] = useState<Priority>("Medium");
   const [saving, setSaving] = useState(false);
 
-  const submit = async (
-    event: React.SubmitEvent<HTMLFormElement>,
-  ) => {
+  useEffect(() => {
+    setDueDate(defaultDate ?? "");
+  }, [defaultDate]);
+
+  const submit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!title.trim()) return;
+
     setSaving(true);
+
     try {
-      await onAdd({ title, priority, dueDate: dueDate || null });
+      await onAdd({
+        title,
+        priority,
+        dueDate: dueDate || null,
+      });
       setTitle("");
-      if (!defaultDate) setDueDate("");
+      setDueDate(defaultDate ?? "");
     } finally {
       setSaving(false);
     }
@@ -35,6 +56,7 @@ export function QuickAdd({ defaultDate, onAdd }: { defaultDate?: string; onAdd: 
           aria-label="Task title"
           className="border-0 shadow-none focus-visible:ring-0"
         />
+
         <div className="flex gap-2">
           <Input
             type="date"
@@ -43,16 +65,20 @@ export function QuickAdd({ defaultDate, onAdd }: { defaultDate?: string; onAdd: 
             aria-label="Due date"
             className="w-full sm:w-40"
           />
+
           <select
             value={priority}
             onChange={(event) => setPriority(event.target.value as Priority)}
             className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             aria-label="Priority"
           >
-            <option value="Low">Non-priority</option>
-            <option value="Medium">Priority</option>
-            <option value="High">Must</option>
+            {PRIORITY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
+
           <Button type="submit" disabled={saving || !title.trim()}>
             {saving ? "Adding…" : "Add"}
           </Button>

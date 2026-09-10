@@ -1,45 +1,41 @@
-const API_URL = import.meta.env.VITE_API_URL;
+/**
+ * File: services/authService.ts
+ * Purpose: Wraps public authentication API calls for registration and login.
+ * Functions: registerUser, loginUser.
+ */
 
-export async function registerUser(data: {
-    fullName: string;
-    email: string;
-    password: string;
-}) {
-    const response = await fetch(`${API_URL}/api/Auth/register`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
+import { apiRequest } from "../lib/api";
 
-    const text = await response.text();
+export type RegisterRequest = {
+  fullName: string;
+  email: string;
+  password: string;
+};
 
-    if (!response.ok) {
-        throw new Error(text || "Register failed");
-    }
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
 
-    // only parse JSON if it is valid
-    try {
-        return JSON.parse(text);
-    } catch {
-        return null; // backend returns empty response
-    }
+export type LoginResponse = {
+  token: string;
+  fullName: string;
+  email: string;
+  userId: string;
+};
+
+export function registerUser(data: RegisterRequest) {
+  return apiRequest<{ message: string }>("/api/auth/register", {
+    method: "POST",
+    json: true,
+    body: JSON.stringify(data),
+  });
 }
 
-export async function loginUser(data: {email: string;password: string;}) {
-    const response = await fetch(`${API_URL}/api/Auth/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
-    }
-
-    return await response.json();
+export function loginUser(data: LoginRequest) {
+  return apiRequest<LoginResponse>("/api/auth/login", {
+    method: "POST",
+    json: true,
+    body: JSON.stringify(data),
+  });
 }

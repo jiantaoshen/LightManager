@@ -1,43 +1,30 @@
+/**
+ * File: services/taskService.ts
+ * Purpose: Wraps authenticated task CRUD calls and the public read-only Trial task endpoint.
+ * Functions: getTasks, createTask, updateTask, deleteTask, getTrialTasks.
+ */
+
 import type { PersonalTaskDraft, Task } from "../interfaces/ITask";
+import { apiRequest } from "../lib/api";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/tasks`;
-
-function authHeaders(json = false): HeadersInit {
-  const token = localStorage.getItem("token");
-  return {
-    ...(json ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+export function getTasks(): Promise<Task[]> {
+  return apiRequest<Task[]>("/api/tasks", { auth: true });
 }
 
-async function readResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || `Request failed (${res.status})`);
-  }
-
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
-
-export async function getTasks(): Promise<Task[]> {
-  const res = await fetch(API_URL, { headers: authHeaders() });
-  return readResponse<Task[]>(res);
-}
-
-export async function createTask(draft: PersonalTaskDraft): Promise<Task> {
-  const res = await fetch(API_URL, {
+export function createTask(draft: PersonalTaskDraft): Promise<Task> {
+  return apiRequest<Task>("/api/tasks", {
     method: "POST",
-    headers: authHeaders(true),
+    auth: true,
+    json: true,
     body: JSON.stringify(draft),
   });
-  return readResponse<Task>(res);
 }
 
-export async function updateTask(taskId: number, task: Task): Promise<Task> {
-  const res = await fetch(`${API_URL}/${taskId}`, {
+export function updateTask(taskId: number, task: Task): Promise<Task> {
+  return apiRequest<Task>(`/api/tasks/${taskId}`, {
     method: "PUT",
-    headers: authHeaders(true),
+    auth: true,
+    json: true,
     body: JSON.stringify({
       title: task.title,
       description: task.description,
@@ -46,21 +33,15 @@ export async function updateTask(taskId: number, task: Task): Promise<Task> {
       dueDate: task.dueDate,
     }),
   });
-  return readResponse<Task>(res);
 }
 
-export async function deleteTask(taskId: number): Promise<void> {
-  const res = await fetch(`${API_URL}/${taskId}`, {
+export function deleteTask(taskId: number): Promise<void> {
+  return apiRequest<void>(`/api/tasks/${taskId}`, {
     method: "DELETE",
-    headers: authHeaders(),
+    auth: true,
   });
-  return readResponse<void>(res);
 }
 
-export async function getTrialTasks(): Promise<Task[]> {
-  const res = await fetch(
-    `${import.meta.env.VITE_API_URL}/api/trial/tasks`,
-  );
-
-  return readResponse<Task[]>(res);
+export function getTrialTasks(): Promise<Task[]> {
+  return apiRequest<Task[]>("/api/trial/tasks");
 }

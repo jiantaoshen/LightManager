@@ -2,125 +2,62 @@
 
 LightManager is a personal task management application built with React, TypeScript, ASP.NET Core, and PostgreSQL.
 
-The project originally started as a lightweight project management system for small teams, with projects, members, role-based permissions, task assignment, and a Kanban board.
+The project originally started as a lightweight project management system for small teams. After continuing to develop and use it, I realized that a team-oriented workflow did not match how I personally manage tasks.
 
-After using and developing the application further, I realized that the team-oriented workflow did not match how I would personally use the product. Because I was not the target user of the original design, it was also difficult to improve the application based on real day-to-day usage.
+I therefore redesigned LightManager as a **personal task manager** focused on a smaller, simpler, and more practical daily workflow.
 
-I therefore redesigned LightManager as a **personal task manager**, focusing on a simpler workflow that I can use myself, test regularly, and improve based on actual experience.
+The current version focuses on:
 
-The current version is designed around quick task capture, daily planning, optional scheduling, and a calendar-oriented workflow. The Today view acts as the main workspace, combining tasks scheduled for today with unscheduled tasks in one place.
+- Quick task capture
+- Daily planning
+- Optional due dates
+- Simple priorities
+- Calendar-based scheduling
+- Responsive desktop and mobile use
+- A safe public Trial mode
 
-The application also includes a Trial mode that allows visitors to explore the application using demo task data without creating an account. Changes made during a Trial session are stored locally in the browser and do not modify the demo account in the database.
+The **Today** page acts as the main daily workspace, while the **Calendar** provides a broader scheduling view.
 
 ## Live Demo
 
-https://lightmanager.jiantao.dev
+**https://lightmanager.jiantao.dev**
 
-Visitors can either create an account, sign in, or enter **Trial mode** to explore the application immediately.
+Visitors can:
 
-## Why I Changed the Direction
+- Create an account
+- Sign in
+- Enter **Trial mode** and explore the application immediately
 
-The first version of LightManager was designed for small teams and included concepts such as:
+Trial mode does not require registration and does not modify the demo data stored in PostgreSQL.
 
-- Projects
-- Project members
-- Role-based permissions
-- Task assignment
-- Kanban workflows
-
-Although these features worked technically, I found that I had little reason to use the application myself.
-
-Instead of continuing to add features for a hypothetical user group, I decided to redesign the application around a workflow that I actually need.
-
-The new direction focuses on:
-
-- Quickly capturing tasks
-- Creating tasks with or without a due date
-- Planning tasks by date
-- Viewing today's tasks and unscheduled tasks together
-- Prioritizing important tasks with a simple three-level system
-- Managing scheduled tasks through a calendar
-- Using the application comfortably on both desktop and mobile
-- Allowing visitors to explore the application through a safe Trial mode
-
-This also gives me the opportunity to improve the product continuously based on my own usage rather than designing features only for demonstration purposes.
-
-The web application is being developed first to stabilize the product flow, API, authentication, and data model. A React Native mobile client may be added later using the same ASP.NET Core API.
+---
 
 ## Features
 
-- User registration and login
-- JWT authentication
-- User-specific task data
-- Trial mode for visitors
-- Local-only task changes during Trial mode
-- Create, update, complete, and delete tasks
+### Task Management
+
+- Create tasks
+- Update tasks
+- Complete and reopen tasks
+- Delete tasks
 - Optional due dates
-- Three-level task priority system
-  - Non-priority
-  - Priority
-  - Must
-- Automatic priority-based task sorting
-- Today view with today's tasks and unscheduled tasks
+- Automatic task sorting
+- Today view
+- Unscheduled task view
 - Calendar view
-- Calendar priority indicators
-- Unscheduled tasks available directly from the Calendar view
-- All tasks view
-- Responsive desktop and mobile layout
-- Persistent PostgreSQL storage for authenticated users
+- All Tasks view
 
-## Task Workflow
+### Priority System
 
-Tasks do not need to belong to a separate inbox.
-
-Instead, scheduling is determined directly by the task's due date.
-
-```text
-Create Task
-    |
-    +-- No due date
-    |      |
-    |      v
-    |   Unscheduled
-    |
-    +-- Due today
-    |      |
-    |      v
-    |   Today
-    |
-    +-- Future date
-           |
-           v
-        Calendar
-```
-
-The Today page acts as the main working area:
-
-```text
-Today
-|
-+-- Today's Tasks
-|
-+-- Unscheduled Tasks
-```
-
-This removes the need for a separate Inbox page and keeps task capture and daily planning in one place.
-
-## Priority System
-
-LightManager uses three simple priority levels:
+LightManager uses three simple user-facing priority levels:
 
 ```text
 Must
-  |
-  v
 Priority
-  |
-  v
 Non-priority
 ```
 
-Internally, these currently correspond to the original priority values:
+The backend currently stores these using the original enum values:
 
 ```text
 High   -> Must
@@ -128,24 +65,62 @@ Medium -> Priority
 Low    -> Non-priority
 ```
 
-Tasks are automatically sorted by priority:
+Tasks are automatically sorted in this order:
 
-1. Must
-2. Priority
-3. Non-priority
+```text
+Must
+  ↓
+Priority
+  ↓
+Non-priority
+```
 
 Tasks with the same priority are ordered by creation time, with older tasks appearing first.
 
-This sorting is used consistently across Today, Unscheduled tasks, and Calendar task lists.
+The same sorting behavior is used consistently across the application.
 
-## Calendar Priority Indicators
+---
 
-The Calendar provides a quick visual indication of the most important unfinished task scheduled for each day.
+## Today
 
-The indicator color is determined by the highest priority among that day's unfinished tasks:
+The Today page is the main daily workspace.
+
+It contains:
 
 ```text
-Blue   -> Non-priority
+Today
+├── Today's Tasks
+└── Unscheduled
+```
+
+Tasks can be created with or without a due date.
+
+```text
+No due date
+     ↓
+Unscheduled
+
+Today's date
+     ↓
+Today
+
+Future date
+     ↓
+Calendar
+```
+
+This keeps task capture simple while allowing scheduling to remain optional.
+
+---
+
+## Calendar
+
+The Calendar provides both task scheduling and a quick visual overview of task importance.
+
+Each date with unfinished tasks displays a colored indicator based on the **highest-priority unfinished task scheduled for that day**.
+
+```text
+Green  -> Non-priority
 Yellow -> Priority
 Red    -> Must
 ```
@@ -153,59 +128,121 @@ Red    -> Must
 For example:
 
 ```text
-Non-priority only
-        -> Blue
+Non-priority tasks only
+        ↓
+      Green
 
-Non-priority + Priority
-        -> Yellow
+Includes Priority
+        ↓
+      Yellow
 
-Priority + Must
-        -> Red
+Includes Must
+        ↓
+       Red
 ```
 
-Completed tasks do not affect the Calendar priority indicator.
+Completed tasks do not affect the Calendar indicator.
 
-If all tasks for a date are completed, the priority indicator is no longer shown.
+If all tasks for a date are completed, the indicator disappears.
 
-The Calendar also includes an **Unscheduled** section so tasks without a due date remain accessible while planning future work.
+The Calendar also includes an **Unscheduled** task card so tasks without due dates remain visible while planning future work.
+
+---
+
+## Navigation
+
+The primary navigation is intentionally kept small and focused.
+
+### Desktop
+
+```text
+LightManager
+
+Today
+Calendar
+
+[Account]
+```
+
+### Mobile
+
+The bottom navigation contains only:
+
+```text
+Today     Calendar
+```
+
+Additional actions are available from the avatar menu.
+
+### Account Menu
+
+Clicking or tapping the avatar opens the account menu:
+
+```text
+Account
+├── Settings
+├── All Tasks
+└── Sign Out
+```
+
+Moving **All Tasks** into the account menu keeps the primary navigation focused on the two most frequently used views.
+
+The same menu is available on mobile, which also provides a clear Sign Out action.
+
+### Trial Account Menu
+
+Trial users see:
+
+```text
+Trial mode
+├── All Tasks
+└── Exit Trial
+```
+
+Settings are not available in Trial mode because Trial does not represent an authenticated personal account.
+
+---
 
 ## Trial Mode
 
-LightManager includes a Trial mode for visitors who want to explore the application without registering.
+LightManager includes a Trial mode that allows visitors to explore the application without creating an account.
 
-The Trial starts with task data based on a dedicated demo account.
+Trial mode loads task data from a dedicated demo account through a read-only endpoint.
 
 ```text
 Visitor
    |
    v
-Trial Mode
+Enter Trial
    |
    v
-Load Demo Tasks
+Read Demo Tasks
    |
    v
-Browser Local Storage
+Create Local Copy
+   |
+   v
+Browser Storage
 ```
 
-Once the Trial data has been loaded, task changes are handled locally.
+After the initial load, the visitor works entirely with a local copy of the tasks.
 
-Visitors can:
+Trial users can:
 
 - Create tasks
+- Update tasks
 - Complete and reopen tasks
 - Delete tasks
-- Change task data
-- Add or remove due dates
 - Change priorities
+- Add or remove due dates
 - Use Today
 - Use Calendar
 - Use All Tasks
 
-These changes affect only the visitor's local browser state.
+All Trial modifications remain local to the visitor's browser.
 
 ```text
-Trial Change
+Trial Tasks
     |
     +-- Create
     +-- Update
@@ -213,18 +250,67 @@ Trial Change
     +-- Delete
     |
     v
-Local Storage
+Local Browser Storage
 
     X
 
 PostgreSQL
 ```
 
-Trial users do not receive the demo account's authentication credentials or JWT token.
+Trial users do **not** receive the demo account credentials or JWT token.
 
-This prevents visitors from modifying the original demo task data in PostgreSQL.
+The backend exposes only a read-only Trial endpoint for retrieving the initial demo data.
 
-Authenticated users continue to use the normal protected API and persistent database storage.
+This prevents Trial users from modifying the original demo account through the authenticated task API.
+
+---
+
+## Authentication
+
+Registered users authenticate through ASP.NET Identity and JWT.
+
+```text
+User Login
+    |
+    v
+ASP.NET Identity
+    |
+    v
+Credential Validation
+    |
+    v
+JWT Generated
+    |
+    v
+Token Stored by Client
+    |
+    v
+Protected API Requests
+    |
+    v
+User-Specific Tasks
+```
+
+Protected task endpoints use the authenticated user's identity so each user can access only their own task data.
+
+Trial mode follows a separate read-only initialization flow:
+
+```text
+Enter Trial
+    |
+    v
+Anonymous Read-Only Trial API
+    |
+    v
+Demo Task Data
+    |
+    v
+Local Browser Storage
+```
+
+Trial users do not use authenticated write endpoints.
+
+---
 
 ## Architecture
 
@@ -242,7 +328,7 @@ Authenticated users continue to use the normal protected API and persistent data
                        PostgreSQL
 ```
 
-For authenticated users:
+### Authenticated User
 
 ```text
 React Client
@@ -258,21 +344,101 @@ User-Specific Tasks
 PostgreSQL
 ```
 
-For Trial users:
+### Trial User
 
 ```text
 React Client
     |
     v
-Read Demo Tasks
+Read-Only Trial API
     |
     v
-Local Browser State
+Demo Tasks
+    |
+    v
+Local Browser Storage
 ```
 
-Each authenticated user only has access to their own tasks.
+The frontend and backend are deployed independently.
 
-The frontend and backend are deployed independently, which also makes it possible to reuse the same API for a future React Native application.
+This also allows the ASP.NET Core API to be reused by a future mobile client.
+
+---
+
+## Data Model
+
+The current application uses a direct relationship between a user and their tasks.
+
+```text
+User
+ |
+ +-- Task
+ |
+ +-- Task
+ |
+ +-- Task
+```
+
+A task contains:
+
+```text
+Task
+├── Title
+├── Description
+├── Status
+│   ├── Todo
+│   └── Done
+├── Priority
+│   ├── Non-priority
+│   ├── Priority
+│   └── Must
+└── Due Date
+    ├── Date
+    └── None
+```
+
+A task without a due date is treated as **unscheduled**.
+
+This keeps the task model simple and allows scheduling to remain optional.
+
+---
+
+## UI and Theme Structure
+
+The frontend uses semantic styling so application colors can be controlled from one central location.
+
+Core theme colors are defined in:
+
+```text
+src/index.css
+```
+
+The theme includes semantic values for:
+
+- Background
+- Foreground text
+- Primary buttons and actions
+- Non-priority tasks
+- Priority tasks
+- Must tasks
+
+The current priority colors are:
+
+```text
+Non-priority -> Green
+Priority     -> Yellow
+Must         -> Red
+```
+
+Primary actions use the application blue color.
+
+Components reference semantic classes rather than defining individual colors directly inside TSX files.
+
+This means changing the theme values in `index.css` updates the corresponding UI throughout the application.
+
+Repeated frontend logic and UI patterns are also extracted into shared components and utility modules where appropriate.
+
+---
 
 ## Tech Stack
 
@@ -281,9 +447,9 @@ The frontend and backend are deployed independently, which also makes it possibl
 - React
 - TypeScript
 - Vite
+- React Router
 - Tailwind CSS
 - shadcn/ui
-- React Router
 
 ### Backend
 
@@ -298,6 +464,8 @@ The frontend and backend are deployed independently, which also makes it possibl
 
 - PostgreSQL
 - Neon
+
+---
 
 ## Deployment
 
@@ -314,324 +482,98 @@ The frontend and backend are deployed independently, which also makes it possibl
 
 - Neon PostgreSQL
 
-## Authentication Flow
-
-For registered users:
-
 ```text
-User Login
-    |
-    v
-ASP.NET Identity Validation
-    |
-    v
+Browser
+   |
+   v
+Vercel
+React Frontend
+   |
+   v
+Azure App Service
+ASP.NET Core API
+   |
+   v
+Neon
 PostgreSQL
-    |
-    v
-JWT Generated
-    |
-    v
-Token Stored by Client
-    |
-    v
-Authenticated API Requests
-    |
-    v
-User-Specific Task Data
 ```
 
-Protected task endpoints use the authenticated user's identity to ensure that users can only access their own data.
+---
 
-Trial users follow a separate flow and do not receive an authenticated user token.
+## Project Background
 
-```text
-Enter Trial
-    |
-    v
-Load Demo Task Data
-    |
-    v
-Store Local Trial Copy
-    |
-    v
-Use Application Locally
-```
+LightManager originally started as a lightweight team project management application with features such as projects, members, role-based permissions, task assignment, and Kanban workflows.
 
-## Project Evolution
+Although the system worked technically, I found that I did not personally need most of the team-oriented workflow.
 
-### Version 1 — Team Project Management
+I therefore redesigned the project around personal task management and simplified both the user experience and the underlying data model.
 
-The original version included:
+The current application is built around direct user-to-task ownership and focuses on practical daily task management.
 
-- Project creation and management
-- Project members
-- Role-based authorization
-- Task assignment
-- Kanban board
-- Drag-and-drop task management
-
-The original data model was centered around projects and team membership.
-
-```text
-User
- └── Project
-      ├── Members
-      └── Tasks
-           └── Assignees
-```
-
-### Version 2 — Personal Task Management
-
-The application was redesigned around a much simpler personal task model.
-
-```text
-User
- ├── Task
- ├── Task
- └── Task
-```
-
-The first version of the personal workflow used a separate Inbox:
-
-```text
-Inbox
-  |
-  v
-Today / Scheduled Tasks
-  |
-  v
-Calendar
-  |
-  v
-Completed
-```
-
-### Version 3 — Simplified Daily Planning
-
-The workflow was simplified again by removing the separate Inbox concept.
-
-Unscheduled tasks are now displayed directly inside the Today view.
-
-```text
-                Today
-                  |
-        +---------+---------+
-        |                   |
-        v                   v
-Today's Tasks          Unscheduled
-        |
-        v
-     Calendar
-```
-
-Tasks can now be created either with or without a due date.
-
-The Calendar was also expanded to:
-
-- Display unscheduled tasks
-- Sort tasks by priority
-- Show priority-colored date indicators based on the most important unfinished task scheduled for each day
-
-A Trial mode was added so visitors can explore the application using demo data without being able to modify the demo account in the database.
-
-These changes make the application simpler to navigate, easier to understand, and closer to the workflow I use in everyday life.
-
-## Current Data Model
-
-The current application uses a direct relationship between users and tasks.
-
-```text
-User
- |
- +-- Task
- |
- +-- Task
- |
- +-- Task
-```
-
-A task can have:
-
-```text
-Title
-
-Description
-
-Status
-├── Todo
-└── Done
-
-Priority
-├── Non-priority
-├── Priority
-└── Must
-
-Due Date
-├── Date
-└── None
-```
-
-A missing due date does not represent a separate task state.
-
-It simply means that the task is **unscheduled**.
-
-This keeps the data model simple and allows the frontend to organize tasks into Today, Unscheduled, Calendar, and All Tasks views without additional project or inbox entities.
-
-## Future Improvements
-
-- React Native Android application
-- Persistent mobile login
-- Recurring tasks
-- Task notes
-- Notifications and reminders
-- Offline task storage
-- Synchronization between mobile and web
-- Improved task editing
-- Search and filtering
-- Optional productivity statistics
-- Additional Trial mode improvements
+---
 
 ## Development Goals
 
 LightManager is not intended to compete with large task management platforms.
 
-The goal of the project is to build a small application that I can genuinely use while continuing to improve my skills in:
+The project is primarily a practical environment for building, using, and continuously improving a real full-stack application.
 
-- Full-stack application architecture
-- React and TypeScript
-- ASP.NET Core
-- REST API design
-- Authentication and authorization
-- PostgreSQL and Entity Framework Core
-- Cloud deployment
-- Responsive and mobile-first design
-- Cross-platform application development
-- Designing safe public demo environments
-- Building software around real personal usage rather than hypothetical requirements
+My goals are to:
+
+- Design software around real usage rather than hypothetical requirements
+- Keep the product and data model simple as features evolve
+- Build reusable and maintainable frontend and backend architecture
+- Improve responsive and mobile-first product design
+- Explore safe public demo and authentication patterns
+- Prepare the architecture for future cross-platform development
+
+The focus is not on adding as many features as possible, but on making deliberate improvements based on actual use.
+
+---
+
+## Future Improvements
+
+Possible future additions include:
+
+- React Native mobile application
+- Persistent mobile authentication
+- Recurring tasks
+- Task notes
+- Notifications and reminders
+- Offline support
+- Cross-device synchronization
+- Improved task editing
+- Search and filtering
+- Optional productivity statistics
+- Additional Trial mode improvements
+
+---
 
 ## Legacy Azure Static Web Apps Deployment — Abandoned
 
-The original LightManager frontend was previously deployed using Azure Static Web Apps at:
+The original frontend was hosted on **Azure Static Web Apps** at:
 
 `https://thankful-beach-0211add0f.7.azurestaticapps.net`
 
-LightManager has since been redesigned and migrated to a new deployment architecture.
-
-The current application is available at:
+The current frontend is hosted on **Vercel** at:
 
 **https://lightmanager.jiantao.dev**
 
-The old Azure Static Web App was intended to receive one final update that would redirect visitors from the legacy URL to the new domain. However, the deployment resource could no longer be updated successfully.
+The old Azure deployment was only intended to preserve the previous URL and redirect visitors to the current application. After several unsuccessful recovery attempts, I decided to abandon the legacy resource and focus on the actively maintained deployment.
 
-### What I Tried
+### Recovery Attempts
 
-I attempted several methods to perform the final redirect deployment.
+| Method | Result |
+| --- | --- |
+| Azure Static Web Apps CLI | Deployment returned `No matching static site found.` |
+| Deployment token reset | The same deployment error continued. |
+| GitHub Actions | Azure could not match the deployment to the original Static Web App. |
+| Azure Portal configuration | Relevant deployment settings were unavailable or read-only. |
+| Azure CLI | Direct resource management did not resolve the issue. |
+| Azure Cloud Shell | The same resource problem remained. |
+| Source-control reconnect | The existing connection could not be successfully recreated. |
 
-#### 1. Azure Static Web Apps CLI
-
-I created a minimal static redirect site containing only:
-
-- `index.html`
-- `staticwebapp.config.json`
-
-and attempted to deploy it using:
-
-```powershell
-swa deploy . --env production
-```
-
-The deployment failed through `StaticSitesClient`.
-
-Running the CLI with verbose logging:
-
-```powershell
-swa deploy --env production . --dry-run --verbose silly
-```
-
-revealed the underlying Azure response:
-
-```text
-BadRequest
-Reason: No matching static site found.
-```
-
-#### 2. Resetting the Deployment Token
-
-The deployment token for the original Static Web App was reset in Azure Portal and added again as:
-
-```text
-SWA_CLI_DEPLOYMENT_TOKEN
-```
-
-The same deployment error continued.
-
-#### 3. GitHub Actions Deployment
-
-I then attempted to bypass the local SWA CLI by using:
-
-```text
-Azure/static-web-apps-deploy@v1
-```
-
-A GitHub repository secret was configured as:
-
-```text
-AZURE_STATIC_WEB_APPS_API_TOKEN
-```
-
-After verifying that GitHub Actions could access the secret successfully, the deployment reached Azure but was rejected with:
-
-```text
-BadRequest
-
-Reason:
-No matching Static Web App was found or the api key was invalid.
-```
-
-The redirect files themselves were successfully generated and detected by the deployment action, so the problem was not caused by the application files or build configuration.
-
-#### 4. Azure Deployment Configuration
-
-I attempted to inspect and change the deployment authorization configuration of the original Static Web App.
-
-However, the relevant configuration options in Azure Portal were disabled or read-only and could not be changed.
-
-#### 5. Azure CLI
-
-I installed Azure CLI and attempted to manage the resource directly.
-
-Local authentication was complicated by tenant and MFA issues, so I later switched to Azure Cloud Shell.
-
-The plan was to disconnect the existing source-control integration and reconnect the Static Web App to the current LightManager repository:
-
-```text
-az staticwebapp disconnect
-az staticwebapp reconnect
-```
-
-However, the disconnect operation also failed, preventing the source-control relationship from being recreated.
-
-## Final Decision
-
-After trying:
-
-* SWA CLI deployment
-* Deployment token reset
-* GitHub Actions deployment
-* Azure Portal deployment configuration
-* Azure CLI
-* Azure Cloud Shell
-* Source-control disconnect/reconnect
-
-I decided not to spend additional development time recovering the legacy Azure Static Web Apps resource.
-
-The purpose of the old deployment was only to preserve an outdated URL and redirect visitors to the current application. At this point, recovering the legacy resource would require significantly more effort than the value provided by maintaining that URL.
-
-The old deployment is therefore considered **abandoned**.
-
-This does not affect the current LightManager application.
-
-The actively maintained version now uses:
+### Current Deployment
 
 ```text
 Frontend
@@ -642,13 +584,11 @@ Backend
 Microsoft Azure App Service
 
 Database
-PostgreSQL / Neon
+Neon PostgreSQL
 ```
 
-All documentation, portfolio links, and future development will use:
+The legacy `azurestaticapps.net` URL is no longer considered an active deployment endpoint.
+
+All future development and documentation use:
 
 **https://lightmanager.jiantao.dev**
-
-The legacy `azurestaticapps.net` URL should no longer be considered an active deployment endpoint.
-
-Rather than continuing to debug infrastructure that is no longer part of the application's architecture, I chose to focus development effort on the current LightManager deployment and future product improvements.

@@ -1,24 +1,53 @@
+/*
+ * File: index.css
+ * Purpose: Defines the global LightManager design tokens and shared semantic styles.
+ * Main sections: theme variables, Tailwind theme mapping, base element styles,
+ * priority badges, and priority dots.
+ *
+ * Theme editing guide:
+ * - Change --background and --foreground for the main surface and text colors.
+ * - Change --primary for buttons, links, focus rings, and primary accents.
+ * - Change --priority-low, --priority-medium, and --priority-high to recolor
+ *   Non-priority, Priority, and Must everywhere in the UI.
+ */
+
 @import "tailwindcss";
 
 :root {
+  /* Core surfaces and text. */
   --background: #fbfbfa;
   --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #1c1917;
+  --card-foreground: var(--foreground);
   --popover: #ffffff;
-  --popover-foreground: #1c1917;
-  --primary: #4f46e5;
+  --popover-foreground: var(--foreground);
+
+  /* Primary UI color: buttons, links, active text, and focus rings. */
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
+  --primary-hover: color-mix(in srgb, var(--primary) 85%, #000000);
+
+  /* Neutral UI surfaces. */
   --secondary: #f1f0ee;
   --secondary-foreground: #292524;
+  --secondary-hover: color-mix(in srgb, var(--secondary) 94%, var(--foreground));
   --muted: #f5f5f4;
   --muted-foreground: #78716c;
-  --accent: #efeeff;
-  --accent-foreground: #3730a3;
-  --destructive: #dc2626;
+  --accent: color-mix(in srgb, var(--primary) 9%, var(--background));
+  --accent-foreground: color-mix(in srgb, var(--primary) 78%, #000000);
+
+  /* Priority colors. These three values control priority color across the app. */
+  --priority-low: #16a34a;
+  --priority-medium: #eab308;
+  --priority-high: #dc2626;
+
+  /* Destructive actions intentionally share the Must/red family. */
+  --destructive: var(--priority-high);
+
+  /* Borders, inputs, focus, and navigation surfaces. */
   --border: #e7e5e4;
   --input: #d6d3d1;
-  --ring: #6366f1;
+  --ring: var(--primary);
   --sidebar: #f8f7f5;
 }
 
@@ -31,8 +60,10 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -45,9 +76,76 @@
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-* { box-sizing: border-box; border-color: var(--border); }
-html { background: var(--background); }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-#root { min-height: 100vh; }
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Shared priority badge styling. Colors are selected only through data-priority. */
+.priority-badge {
+  border: 1px solid transparent;
+}
+
+.priority-badge[data-priority="Low"] {
+  border-color: color-mix(in srgb, var(--priority-low) 28%, transparent);
+  background: color-mix(in srgb, var(--priority-low) 13%, transparent);
+  color: color-mix(in srgb, var(--priority-low) 72%, #000000);
+}
+
+.priority-badge[data-priority="Medium"] {
+  border-color: color-mix(in srgb, var(--priority-medium) 34%, transparent);
+  background: color-mix(in srgb, var(--priority-medium) 18%, transparent);
+  color: color-mix(in srgb, var(--priority-medium) 65%, #000000);
+}
+
+.priority-badge[data-priority="High"] {
+  border-color: color-mix(in srgb, var(--priority-high) 28%, transparent);
+  background: color-mix(in srgb, var(--priority-high) 12%, transparent);
+  color: color-mix(in srgb, var(--priority-high) 78%, #000000);
+}
+
+/* Shared calendar/legend priority dots. */
+.priority-dot {
+  display: inline-block;
+  border-radius: 9999px;
+}
+
+.priority-dot[data-priority="Low"] {
+  background: var(--priority-low);
+}
+
+.priority-dot[data-priority="Medium"] {
+  background: var(--priority-medium);
+}
+
+.priority-dot[data-priority="High"] {
+  background: var(--priority-high);
+}

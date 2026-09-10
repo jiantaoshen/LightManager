@@ -1,3 +1,9 @@
+/**
+ * File: interfaces/ITask.ts
+ * Purpose: Defines the frontend task status, priority, API task shape, and task creation draft.
+ * Types: Status, Priority, Task, PersonalTaskDraft.
+ */
+
 export type Status = "Todo" | "Done";
 export type Priority = "Low" | "Medium" | "High";
 
@@ -7,7 +13,7 @@ export interface Task {
   description?: string;
   status: Status;
   priority: Priority;
-  dueDate?: string | null;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;

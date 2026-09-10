@@ -1,5 +1,13 @@
+/*
+ * File: Controllers/TrialController.cs
+ * Purpose: Exposes a public read-only task template for Trial mode without issuing demo-account credentials.
+ * Action: GetTrialTasks.
+ */
+
 using LightManager.Server.Data;
 using LightManager.Server.DTOs;
+using LightManager.Server.Extensions;
+using LightManager.Server.Mappings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -29,13 +37,8 @@ public class TrialController : ControllerBase
     [HttpGet("tasks")]
     public async Task<ActionResult<List<TaskDetailDTO>>> GetTrialTasks()
     {
-        var trialEmail =
-            _configuration["TRIAL_USER_EMAIL"]
-            ?? Environment.GetEnvironmentVariable("TRIAL_USER_EMAIL")
-            ?? "1@test.se";
-
-        var trialUser =
-            await _userManager.FindByEmailAsync(trialEmail);
+        var trialEmail = _configuration.GetSettingOrDefault("TRIAL_USER_EMAIL", "1@test.se");
+        var trialUser = await _userManager.FindByEmailAsync(trialEmail);
 
         if (trialUser is null)
         {
@@ -51,18 +54,7 @@ public class TrialController : ControllerBase
             .OrderBy(task => task.DueDate == null)
             .ThenBy(task => task.DueDate)
             .ThenByDescending(task => task.CreatedAt)
-            .Select(task => new TaskDetailDTO
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                Priority = task.Priority,
-                DueDate = task.DueDate,
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-                CompletedAt = task.CompletedAt
-            })
+            .Select(TaskMappings.ToDetailDtoExpression)
             .ToListAsync();
 
         return Ok(tasks);

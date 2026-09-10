@@ -1,4 +1,10 @@
-﻿using LightManager.Server.Data;
+﻿/*
+ * File: Controllers/ProfileController.cs
+ * Purpose: Provides authenticated profile read, display-name update, and password-change endpoints.
+ * Actions: GetProfile, UpdateDisplayName, ChangePassword.
+ */
+
+using LightManager.Server.Data;
 using LightManager.Server.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

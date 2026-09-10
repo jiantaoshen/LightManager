@@ -1,8 +1,15 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿/*
+ * File: Controllers/AuthController.cs
+ * Purpose: Handles account registration, login, health checks, and JWT creation.
+ * Actions: Health, Register, Login.
+ */
+
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using LightManager.Server.Data;
 using LightManager.Server.DTOs;
+using LightManager.Server.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -37,8 +44,6 @@ public class AuthController : ControllerBase
         if (email.Length == 0 || displayName.Length == 0)
             return BadRequest(new { message = "Name and email are required." });
 
-        // Email is used as the Identity username so two people may share the
-        // same display name without violating Identity's unique username rule.
         var user = new ApplicationUser
         {
             UserName = email,
@@ -73,10 +78,9 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.Name, user.DisplayName)
         };
 
-        var jwtKey = GetRequiredSetting("JWT_KEY");
-        var issuer = GetRequiredSetting("JWT_ISSUER");
-        var audience = GetRequiredSetting("JWT_AUDIENCE");
-
+        var jwtKey = _configuration.GetRequiredSetting("JWT_KEY");
+        var issuer = _configuration.GetRequiredSetting("JWT_ISSUER");
+        var audience = _configuration.GetRequiredSetting("JWT_AUDIENCE");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -95,9 +99,4 @@ public class AuthController : ControllerBase
             userId = user.Id
         });
     }
-
-    private string GetRequiredSetting(string key)
-        => _configuration[key]
-           ?? Environment.GetEnvironmentVariable(key)
-           ?? throw new InvalidOperationException($"Missing required configuration: {key}");
 }

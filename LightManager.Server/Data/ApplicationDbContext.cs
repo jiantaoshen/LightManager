@@ -1,4 +1,11 @@
-﻿using LightManager.Server.Models;
+﻿/*
+ * File: Data/ApplicationDbContext.cs
+ * Purpose: Configures EF Core, ASP.NET Identity persistence, task relationships, enum storage, and task indexes.
+ * Type: ApplicationDbContext.
+ * Override: OnModelCreating.
+ */
+
+using LightManager.Server.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,7 +46,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(task => task.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // These indexes support the main task views: Today, unscheduled tasks, and Calendar.
             entity.HasIndex(task => new { task.UserId, task.DueDate });
             entity.HasIndex(task => new { task.UserId, task.Status });
         });

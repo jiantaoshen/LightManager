@@ -1,3 +1,10 @@
+/**
+ * File: pages/register.tsx
+ * Purpose: Registers a new user, signs them in, and opens their Today workspace.
+ * Component: Register.
+ * Function: handleSubmit.
+ */
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
@@ -5,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useAuth } from "../context/useAuth";
+import { STORAGE_KEYS } from "../lib/storage";
 import { loginUser, registerUser } from "../services/authService";
 
 export default function Register() {
@@ -17,17 +25,21 @@ export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (
-    event: React.SubmitEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (password !== confirmPassword) return setError("Passwords do not match.");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
       await registerUser({ fullName, email, password });
       const result = await loginUser({ email, password });
-      localStorage.setItem("token", result.token);
+      localStorage.setItem(STORAGE_KEYS.authToken, result.token);
       login({ fullName: result.fullName, email: result.email, userId: result.userId });
       navigate("/today");
     } catch (err) {
@@ -41,20 +53,48 @@ export default function Register() {
     <div className="flex min-h-dvh items-center justify-center bg-muted/40 px-4 py-10">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <Link to="/" className="mb-5 text-sm font-semibold text-primary">LightManager</Link>
+          <Link to="/" className="mb-5 text-sm font-semibold text-primary">
+            LightManager
+          </Link>
           <CardTitle className="text-2xl">Create your workspace</CardTitle>
-          <CardDescription>A lightweight place for tasks, notes and your week.</CardDescription>
+          <CardDescription>A lightweight place for personal tasks and daily planning.</CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="confirm">Confirm password</Label><Input id="confirm" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required /></div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm">Confirm password</Label>
+              <Input id="confirm" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
+            </div>
+
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>{loading ? "Creating…" : "Create account"}</Button>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Creating…" : "Create account"}
+            </Button>
           </form>
-          <p className="mt-6 text-center text-sm text-muted-foreground">Already have an account? <Link to="/login" className="font-medium text-foreground underline-offset-4 hover:underline">Sign in</Link></p>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Sign in
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

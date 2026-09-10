@@ -1,39 +1,29 @@
-import type { Task } from "../interfaces/ITask";
+/**
+ * File: lib/trial.ts
+ * Purpose: Reads, writes, and clears the browser-only task copy used by Trial mode.
+ * Functions: getLocalTrialTasks, saveLocalTrialTasks, clearLocalTrialTasks.
+ */
 
-export const TRIAL_TASKS_STORAGE_KEY =
-  "lightmanager.trial.tasks.v1";
+import type { Task } from "../interfaces/ITask";
+import { STORAGE_KEYS } from "./storage";
 
 export function getLocalTrialTasks(): Task[] | null {
-  const saved = localStorage.getItem(
-    TRIAL_TASKS_STORAGE_KEY,
-  );
+  const saved = localStorage.getItem(STORAGE_KEYS.trialTasks);
 
-  if (!saved) {
-    return null;
-  }
+  if (!saved) return null;
 
   try {
     return JSON.parse(saved) as Task[];
   } catch {
-    localStorage.removeItem(
-      TRIAL_TASKS_STORAGE_KEY,
-    );
-
+    localStorage.removeItem(STORAGE_KEYS.trialTasks);
     return null;
   }
 }
 
-export function saveLocalTrialTasks(
-  tasks: Task[],
-) {
-  localStorage.setItem(
-    TRIAL_TASKS_STORAGE_KEY,
-    JSON.stringify(tasks),
-  );
+export function saveLocalTrialTasks(tasks: Task[]): void {
+  localStorage.setItem(STORAGE_KEYS.trialTasks, JSON.stringify(tasks));
 }
 
-export function clearLocalTrialTasks() {
-  localStorage.removeItem(
-    TRIAL_TASKS_STORAGE_KEY,
-  );
+export function clearLocalTrialTasks(): void {
+  localStorage.removeItem(STORAGE_KEYS.trialTasks);
 }

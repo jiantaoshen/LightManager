@@ -1,45 +1,50 @@
-import type {
-  Priority,
-  Task,
-} from "../interfaces/ITask";
+/**
+ * File: lib/task.ts
+ * Purpose: Provides reusable task filtering and sorting helpers for Today, Calendar, and task lists.
+ * Functions: compareTasksByPriority, sortTasksByPriority, getTasksForDate,
+ * getUnscheduledTasks, getOpenTasks, getCompletedTasks.
+ */
 
-const priorityRank: Record<Priority, number> = {
-  Low: 0,
-  Medium: 1,
-  High: 2,
-};
+import type { Task } from "../interfaces/ITask";
+import { PRIORITY_RANK } from "./priority";
+import { toDateKey } from "./date";
 
-export function compareTasksByPriority(
-  a: Task,
-  b: Task,
-) {
-  // Must > Priority > Non-priority
-  const priorityDifference =
-    priorityRank[b.priority] -
-    priorityRank[a.priority];
+export function compareTasksByPriority(a: Task, b: Task): number {
+  const priorityDifference = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
 
   if (priorityDifference !== 0) {
     return priorityDifference;
   }
 
-  // Same priority:
-  // older tasks first
-  const createdDifference =
-    new Date(a.createdAt).getTime() -
-    new Date(b.createdAt).getTime();
+  const createdDifference = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 
   if (createdDifference !== 0) {
     return createdDifference;
   }
 
-  // Stable final fallback
   return a.id - b.id;
 }
 
-export function sortTasksByPriority(
-  tasks: Task[],
-) {
+export function sortTasksByPriority(tasks: Task[]): Task[] {
   return [...tasks].sort(compareTasksByPriority);
 }
 
-export { priorityRank };
+export function getTasksForDate(tasks: Task[], dateKey: string): Task[] {
+  return sortTasksByPriority(
+    tasks.filter((task) => task.dueDate && toDateKey(task.dueDate) === dateKey),
+  );
+}
+
+export function getUnscheduledTasks(tasks: Task[]): Task[] {
+  return sortTasksByPriority(
+    tasks.filter((task) => !task.dueDate && task.status !== "Done"),
+  );
+}
+
+export function getOpenTasks(tasks: Task[]): Task[] {
+  return sortTasksByPriority(tasks.filter((task) => task.status !== "Done"));
+}
+
+export function getCompletedTasks(tasks: Task[]): Task[] {
+  return sortTasksByPriority(tasks.filter((task) => task.status === "Done"));
+}

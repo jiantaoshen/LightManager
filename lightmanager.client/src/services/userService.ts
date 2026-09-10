@@ -1,62 +1,40 @@
-const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+/**
+ * File: services/userService.ts
+ * Purpose: Wraps authenticated profile API calls.
+ * Functions: getProfile, updateUsername, changePassword.
+ */
 
-export async function findUserByEmail(email: string) {
-    const token = localStorage.getItem("token");
+import { apiRequest } from "../lib/api";
 
-    const res = await fetch(
-        `${API_URL}/users/by-email?email=${encodeURIComponent(email)}`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }
-    );
+export type ProfileResponse = {
+  id: string;
+  userName: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+};
 
-    if (!res.ok) {
-        throw new Error(await res.text());
-    }
-
-    return await res.json();
+export function getProfile(): Promise<ProfileResponse> {
+  return apiRequest<ProfileResponse>("/api/profile", { auth: true });
 }
 
-export const getProfile = async () => {
-    const res = await fetch(`${API_URL}/profile`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-    });
-    return res.json();
-};
+export function updateUsername(data: { fullName: string }): Promise<{ fullName: string }> {
+  return apiRequest<{ fullName: string }>("/api/profile/username", {
+    method: "PUT",
+    auth: true,
+    json: true,
+    body: JSON.stringify(data),
+  });
+}
 
-export const updateUsername = async (data: { fullName: string }) => {
-    return await fetch(`${API_URL}/profile/username`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify(data)
-    });
-};
-
-export const changePassword = async (data: {currentPassword: string;newPassword: string;}) => {
-    const res = await fetch(`${API_URL}/profile/password`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify(data)
-    });
-
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(
-            Array.isArray(error)
-                ? error.map(e => e.description).join(", ")
-                : "Password change failed"
-        );
-    }
-
-    return true;
-};
+export function changePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  return apiRequest<void>("/api/profile/password", {
+    method: "PUT",
+    auth: true,
+    json: true,
+    body: JSON.stringify(data),
+  });
+}

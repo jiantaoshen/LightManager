@@ -1,16 +1,14 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+/**
+ * File: hooks/usePersonalTasks.ts
+ * Purpose: Provides one task state API for authenticated database-backed users and local-only Trial users.
+ * Hook: usePersonalTasks.
+ * Functions: getNextTrialTaskId, load, addTask, toggleTask, removeTask, editTask.
+ */
 
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/useAuth";
-
-import type {
-  PersonalTaskDraft,
-  Task,
-} from "../interfaces/ITask";
-
+import type { PersonalTaskDraft, Task } from "../interfaces/ITask";
+import { getLocalTrialTasks, saveLocalTrialTasks } from "../lib/trial";
 import {
   createTask,
   deleteTask,
@@ -19,36 +17,28 @@ import {
   updateTask,
 } from "../services/taskService";
 
-import {
-  getLocalTrialTasks,
-  saveLocalTrialTasks,
-} from "../lib/trial";
-
-function getNextTrialTaskId(
-  tasks: Task[],
-) {
+function getNextTrialTaskId(tasks: Task[]): number {
   const smallestId = tasks.reduce(
-    (smallest, task) =>
-      Math.min(smallest, task.id),
+    (smallest, task) => Math.min(smallest, task.id),
     0,
   );
 
-  return smallestId <= 0
-    ? smallestId - 1
-    : -1;
+  return smallestId <= 0 ? smallestId - 1 : -1;
 }
 
 export function usePersonalTasks() {
   const { isTrial } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [tasks, setTasks] =
-    useState<Task[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
+  const updateTrialTasks = (updater: (current: Task[]) => Task[]) => {
+    setTasks((current) => {
+      const next = updater(current);
+      saveLocalTrialTasks(next);
+      return next;
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,39 +46,22 @@ export function usePersonalTasks() {
 
     try {
       if (isTrial) {
-        /*
-          First check whether this browser
-          already has modified trial data.
-        */
-        const localTasks =
-          getLocalTrialTasks();
+        const localTasks = getLocalTrialTasks();
 
         if (localTasks) {
           setTasks(localTasks);
           return;
         }
 
-        /*
-          No local copy yet:
-          download the read-only template
-          from 1@test.se.
-        */
-        const trialTasks =
-          await getTrialTasks();
-
+        const trialTasks = await getTrialTasks();
         setTasks(trialTasks);
         saveLocalTrialTasks(trialTasks);
-
         return;
       }
 
       setTasks(await getTasks());
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load tasks",
-      );
+      setError(err instanceof Error ? err.message : "Failed to load tasks");
     } finally {
       setLoading(false);
     }
@@ -98,195 +71,77 @@ export function usePersonalTasks() {
     void load();
   }, [load]);
 
-  const addTask = async (
-    draft: PersonalTaskDraft,
-  ) => {
-    /*
-      TRIAL:
-      Create a completely local Task.
-    */
+  const addTask = async (draft: PersonalTaskDraft) => {
     if (isTrial) {
-      const now =
-        new Date().toISOString();
-
+      const now = new Date().toISOString();
       const created: Task = {
         id: getNextTrialTaskId(tasks),
-
         title: draft.title.trim(),
-
-        description:
-          draft.description?.trim() ||
-          undefined,
-
+        description: draft.description?.trim() || undefined,
         status: "Todo",
-
         priority: draft.priority,
-
-        dueDate:
-          draft.dueDate ?? null,
-
+        dueDate: draft.dueDate ?? null,
         createdAt: now,
         updatedAt: now,
       };
 
-      setTasks((current) => {
-        const next = [
-          ...current,
-          created,
-        ];
-
-        saveLocalTrialTasks(next);
-
-        return next;
-      });
-
+      updateTrialTasks((current) => [...current, created]);
       return created;
     }
 
-    /*
-      AUTHENTICATED:
-      Normal database create.
-    */
     const created = await createTask({
       ...draft,
-
-      title:
-        draft.title.trim(),
-
-      description:
-        draft.description?.trim() ||
-        undefined,
+      title: draft.title.trim(),
+      description: draft.description?.trim() || undefined,
     });
 
-    setTasks((current) => [
-      ...current,
-      created,
-    ]);
-
+    setTasks((current) => [...current, created]);
     return created;
   };
 
-  const toggleTask = async (
-    task: Task,
-  ) => {
-    const now =
-      new Date().toISOString();
-
-    const nextStatus =
-      task.status === "Done"
-        ? "Todo"
-        : "Done";
-
+  const toggleTask = async (task: Task) => {
+    const now = new Date().toISOString();
+    const nextStatus = task.status === "Done" ? "Todo" : "Done";
     const optimistic: Task = {
       ...task,
-
       status: nextStatus,
-
       updatedAt: now,
-
-      completedAt:
-        nextStatus === "Done"
-          ? now
-          : undefined,
+      completedAt: nextStatus === "Done" ? now : undefined,
     };
 
-    /*
-      TRIAL:
-      local only.
-    */
     if (isTrial) {
-      setTasks((current) => {
-        const next = current.map(
-          (item) =>
-            item.id === task.id
-              ? optimistic
-              : item,
-        );
-
-        saveLocalTrialTasks(next);
-
-        return next;
-      });
-
+      updateTrialTasks((current) =>
+        current.map((item) => (item.id === task.id ? optimistic : item)),
+      );
       return optimistic;
     }
 
-    /*
-      AUTHENTICATED:
-      normal optimistic database update.
-    */
     setTasks((current) =>
-      current.map((item) =>
-        item.id === task.id
-          ? optimistic
-          : item,
-      ),
+      current.map((item) => (item.id === task.id ? optimistic : item)),
     );
 
     try {
-      const saved =
-        await updateTask(
-          task.id,
-          optimistic,
-        );
-
+      const saved = await updateTask(task.id, optimistic);
       setTasks((current) =>
-        current.map((item) =>
-          item.id === task.id
-            ? saved
-            : item,
-        ),
+        current.map((item) => (item.id === task.id ? saved : item)),
       );
-
       return saved;
     } catch (err) {
       setTasks((current) =>
-        current.map((item) =>
-          item.id === task.id
-            ? task
-            : item,
-        ),
+        current.map((item) => (item.id === task.id ? task : item)),
       );
-
       throw err;
     }
   };
 
-  const removeTask = async (
-    taskId: number,
-  ) => {
-    /*
-      TRIAL:
-      Delete only local copy.
-    */
+  const removeTask = async (taskId: number) => {
     if (isTrial) {
-      setTasks((current) => {
-        const next =
-          current.filter(
-            (task) =>
-              task.id !== taskId,
-          );
-
-        saveLocalTrialTasks(next);
-
-        return next;
-      });
-
+      updateTrialTasks((current) => current.filter((task) => task.id !== taskId));
       return;
     }
 
-    /*
-      AUTHENTICATED:
-      database delete.
-    */
     const previous = tasks;
-
-    setTasks((current) =>
-      current.filter(
-        (task) =>
-          task.id !== taskId,
-      ),
-    );
+    setTasks((current) => current.filter((task) => task.id !== taskId));
 
     try {
       await deleteTask(taskId);
@@ -296,54 +151,23 @@ export function usePersonalTasks() {
     }
   };
 
-  const editTask = async (
-    task: Task,
-  ) => {
-    /*
-      TRIAL:
-      edit local only.
-    */
+  const editTask = async (task: Task) => {
     if (isTrial) {
       const edited: Task = {
         ...task,
-        updatedAt:
-          new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      setTasks((current) => {
-        const next =
-          current.map((item) =>
-            item.id === task.id
-              ? edited
-              : item,
-          );
-
-        saveLocalTrialTasks(next);
-
-        return next;
-      });
-
+      updateTrialTasks((current) =>
+        current.map((item) => (item.id === task.id ? edited : item)),
+      );
       return edited;
     }
 
-    /*
-      AUTHENTICATED:
-      database update.
-    */
-    const saved =
-      await updateTask(
-        task.id,
-        task,
-      );
-
+    const saved = await updateTask(task.id, task);
     setTasks((current) =>
-      current.map((item) =>
-        item.id === task.id
-          ? saved
-          : item,
-      ),
+      current.map((item) => (item.id === task.id ? saved : item)),
     );
-
     return saved;
   };
 

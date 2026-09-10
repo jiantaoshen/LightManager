@@ -1,6 +1,13 @@
+/*
+ * File: Program.cs
+ * Purpose: Boots the ASP.NET Core API and configures database access, Identity, JWT authentication, CORS, JSON, and controllers.
+ * Functions: none; this file uses top-level application startup statements.
+ */
+
 using System.Text;
 using System.Text.Json.Serialization;
 using LightManager.Server.Data;
+using LightManager.Server.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,17 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
 
-var jwtKey = builder.Configuration["JWT_KEY"]
-    ?? Environment.GetEnvironmentVariable("JWT_KEY")
-    ?? throw new InvalidOperationException("JWT_KEY is missing.");
-
-var jwtIssuer = builder.Configuration["JWT_ISSUER"]
-    ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
-    ?? throw new InvalidOperationException("JWT_ISSUER is missing.");
-
-var jwtAudience = builder.Configuration["JWT_AUDIENCE"]
-    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-    ?? throw new InvalidOperationException("JWT_AUDIENCE is missing.");
+var jwtKey = builder.Configuration.GetRequiredSetting("JWT_KEY");
+var jwtIssuer = builder.Configuration.GetRequiredSetting("JWT_ISSUER");
+var jwtAudience = builder.Configuration.GetRequiredSetting("JWT_AUDIENCE");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -56,9 +55,8 @@ builder.Services
         };
     });
 
-var configuredOrigins = (builder.Configuration["FRONTEND_ORIGINS"]
-        ?? Environment.GetEnvironmentVariable("FRONTEND_ORIGINS")
-        ?? "http://localhost:5173")
+var configuredOrigins = builder.Configuration
+    .GetSettingOrDefault("FRONTEND_ORIGINS", "http://localhost:5173")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
@@ -75,7 +73,7 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        // Keeps the API contract friendly to React: "Todo", "Done", "High", etc.
+        // Keep enum values stable for existing API/database compatibility.
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
@@ -90,7 +88,6 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

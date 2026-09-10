@@ -1,73 +1,42 @@
-import {
-  useCallback,
-  useState,
-} from "react";
+/**
+ * File: context/AuthProvider.tsx
+ * Purpose: Owns authenticated/trial user state and persists the current user session locally.
+ * Component: AuthProvider.
+ * Functions: login, enterTrial, logout.
+ */
 
-import {
-  AuthContext,
-  type AuthContextType,
-  type User,
-} from "./authContextCore";
+import { useCallback, useState } from "react";
+import { clearLocalTrialTasks } from "../lib/trial";
+import { STORAGE_KEYS } from "../lib/storage";
+import { AuthContext, type AuthContextType, type User } from "./authContextCore";
 
-import {
-  clearLocalTrialTasks,
-} from "../lib/trial";
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.authUser);
+    if (!saved) return null;
 
-export function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [user, setUser] =
-    useState<User | null>(() => {
-      const saved =
-        localStorage.getItem("user");
+    try {
+      return JSON.parse(saved) as User;
+    } catch {
+      localStorage.removeItem(STORAGE_KEYS.authUser);
+      return null;
+    }
+  });
 
-      if (!saved) {
-        return null;
-      }
+  const isTrial = user?.mode === "trial";
 
-      try {
-        return JSON.parse(saved);
-      } catch {
-        localStorage.removeItem("user");
-        return null;
-      }
-    });
+  const login = useCallback((userData: User) => {
+    const authenticatedUser: User = {
+      ...userData,
+      mode: "authenticated",
+    };
 
-  const isTrial =
-    user?.mode === "trial";
-
-  const login = useCallback(
-    (userData: User) => {
-      const authenticatedUser: User = {
-        ...userData,
-        mode: "authenticated",
-      };
-
-      setUser(authenticatedUser);
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(authenticatedUser),
-      );
-    },
-    [],
-  );
+    setUser(authenticatedUser);
+    localStorage.setItem(STORAGE_KEYS.authUser, JSON.stringify(authenticatedUser));
+  }, []);
 
   const enterTrial = useCallback(() => {
-    /*
-      Important:
-      Trial mode must never inherit a JWT
-      from a previously logged-in account.
-    */
-    localStorage.removeItem("token");
-
-    /*
-      Every time someone explicitly starts
-      a new Trial session, start again from
-      the server's trial template.
-    */
+    localStorage.removeItem(STORAGE_KEYS.authToken);
     clearLocalTrialTasks();
 
     const trialUser: User = {
@@ -78,18 +47,13 @@ export function AuthProvider({
     };
 
     setUser(trialUser);
-
-    localStorage.setItem(
-      "user",
-      JSON.stringify(trialUser),
-    );
+    localStorage.setItem(STORAGE_KEYS.authUser, JSON.stringify(trialUser));
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem(STORAGE_KEYS.authUser);
+    localStorage.removeItem(STORAGE_KEYS.authToken);
   }, []);
 
   const value: AuthContextType = {
@@ -101,9 +65,5 @@ export function AuthProvider({
     setUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

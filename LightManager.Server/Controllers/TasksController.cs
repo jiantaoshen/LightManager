@@ -1,6 +1,14 @@
-﻿using System.Security.Claims;
+﻿/*
+ * File: Controllers/TasksController.cs
+ * Purpose: Provides authenticated task CRUD endpoints scoped to the current user.
+ * Actions: GetTasks, GetTask, CreateTask, UpdateTask, DeleteTask.
+ * Helpers: GetCurrentUserId, NormalizeNullable.
+ */
+
+using System.Security.Claims;
 using LightManager.Server.Data;
 using LightManager.Server.DTOs;
+using LightManager.Server.Mappings;
 using LightManager.Server.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +28,6 @@ public class TasksController : ControllerBase
         _context = context;
     }
 
-    // GET /api/tasks
-    // Optional filters make this API usable later from React Native without
-    // forcing the mobile client to download a user's entire history.
     [HttpGet]
     public async Task<ActionResult<List<TaskDetailDTO>>> GetTasks(
         [FromQuery] DateOnly? from = null,
@@ -58,18 +63,7 @@ public class TasksController : ControllerBase
             .OrderBy(task => task.DueDate == null)
             .ThenBy(task => task.DueDate)
             .ThenByDescending(task => task.CreatedAt)
-            .Select(task => new TaskDetailDTO
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                Priority = task.Priority,
-                DueDate = task.DueDate,
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-                CompletedAt = task.CompletedAt
-            })
+            .Select(TaskMappings.ToDetailDtoExpression)
             .ToListAsync();
 
         return Ok(tasks);
@@ -84,18 +78,7 @@ public class TasksController : ControllerBase
         var task = await _context.Tasks
             .AsNoTracking()
             .Where(task => task.Id == taskId && task.UserId == userId)
-            .Select(task => new TaskDetailDTO
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                Status = task.Status,
-                Priority = task.Priority,
-                DueDate = task.DueDate,
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-                CompletedAt = task.CompletedAt
-            })
+            .Select(TaskMappings.ToDetailDtoExpression)
             .FirstOrDefaultAsync();
 
         return task is null ? NotFound() : Ok(task);
@@ -127,7 +110,7 @@ public class TasksController : ControllerBase
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTask), new { taskId = task.Id }, ToDto(task));
+        return CreatedAtAction(nameof(GetTask), new { taskId = task.Id }, task.ToDetailDto());
     }
 
     [HttpPut("{taskId:int}")]
@@ -162,7 +145,7 @@ public class TasksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(ToDto(task));
+        return Ok(task.ToDetailDto());
     }
 
     [HttpDelete("{taskId:int}")]
@@ -187,18 +170,4 @@ public class TasksController : ControllerBase
 
     private static string? NormalizeNullable(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private static TaskDetailDTO ToDto(TaskModel task)
-        => new()
-        {
-            Id = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            Status = task.Status,
-            Priority = task.Priority,
-            DueDate = task.DueDate,
-            CreatedAt = task.CreatedAt,
-            UpdatedAt = task.UpdatedAt,
-            CompletedAt = task.CompletedAt
-        };
 }
