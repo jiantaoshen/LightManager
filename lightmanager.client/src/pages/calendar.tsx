@@ -69,7 +69,6 @@ export default function CalendarPage() {
   const {
     tasks,
     loading,
-    addTask,
     toggleTask,
     removeTask,
   } = usePersonalTasks();
