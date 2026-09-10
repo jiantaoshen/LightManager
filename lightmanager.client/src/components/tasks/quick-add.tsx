@@ -10,12 +10,14 @@ export function QuickAdd({ defaultDate, onAdd }: { defaultDate?: string; onAdd: 
   const [priority, setPriority] = useState<Priority>("Medium");
   const [saving, setSaving] = useState(false);
 
-  const submit = async (event: React.FormEvent) => {
+  const submit = async (
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await onAdd({ title, priority, dueDate: dueDate || undefined });
+      await onAdd({ title, priority, dueDate: dueDate || null });
       setTitle("");
       if (!defaultDate) setDueDate("");
     } finally {

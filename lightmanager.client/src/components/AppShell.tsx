@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 
 const navItems = [
   { to: "/today", label: "Today", icon: "✓" },
-  { to: "/inbox", label: "Inbox", icon: "↓" },
   { to: "/calendar", label: "Calendar", icon: "□" },
   { to: "/tasks", label: "All tasks", icon: "≡" },
 ];

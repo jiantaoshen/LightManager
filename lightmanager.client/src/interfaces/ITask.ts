@@ -7,7 +7,7 @@ export interface Task {
   description?: string;
   status: Status;
   priority: Priority;
-  dueDate?: string;
+  dueDate?: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -17,5 +17,5 @@ export type PersonalTaskDraft = {
   title: string;
   description?: string;
   priority: Priority;
-  dueDate?: string;
+  dueDate?: string | null;
 };

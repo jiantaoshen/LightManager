@@ -31,13 +31,18 @@ export default function CalendarPage() {
     return map;
   }, [tasks]);
 
+    const unscheduledTasks = tasks.filter(
+    (task) =>
+      !task.dueDate &&
+      task.status !== "Done"
+  );
+
   const monthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(cursor);
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-sm font-medium text-primary">Calendar</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Plan without overplanning.</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -97,6 +102,26 @@ export default function CalendarPage() {
               ) : (
                 <div className="divide-y divide-border">
                   {selectedTasks.map((task) => <TaskRow key={task.id} task={task} onToggle={() => void toggleTask(task)} onDelete={() => void removeTask(task.id)} />)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Unscheduled</CardTitle>
+              <CardDescription>{unscheduledTasks.length} items waiting</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">Loading inbox…</p>
+              ) : unscheduledTasks.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {unscheduledTasks.map((task) => (
+                    <TaskRow key={task.id} task={task} onToggle={() => void toggleTask(task)} onDelete={() => void removeTask(task.id)} />
+                  ))}
                 </div>
               )}
             </CardContent>

@@ -17,7 +17,9 @@ export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (password !== confirmPassword) return setError("Passwords do not match.");
     setLoading(true);
