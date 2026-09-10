@@ -49,9 +49,9 @@ export function QuickAdd({ defaultDate, onAdd }: { defaultDate?: string; onAdd: 
             className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             aria-label="Priority"
           >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
+            <option value="Low">Non-priority</option>
+            <option value="Medium">Priority</option>
+            <option value="High">Must</option>
           </select>
           <Button type="submit" disabled={saving || !title.trim()}>
             {saving ? "Adding…" : "Add"}

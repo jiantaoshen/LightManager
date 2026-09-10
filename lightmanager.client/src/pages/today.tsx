@@ -3,18 +3,31 @@ import { QuickAdd } from "../components/tasks/quick-add";
 import { TaskRow } from "../components/tasks/task-row";
 import { usePersonalTasks } from "../hooks/usePersonalTasks";
 import { formatLongDate, todayKey, toDateKey } from "../lib/date";
+import { sortTasksByPriority } from "../lib/task";
 
 export default function TodayPage() {
   const { tasks, loading, error, addTask, toggleTask, removeTask } = usePersonalTasks();
   const today = todayKey();
   const todayTasks = tasks.filter((task) => task.dueDate && toDateKey(task.dueDate) === today);
-  const open = todayTasks.filter((task) => task.status !== "Done");
-  const done = todayTasks.filter((task) => task.status === "Done");
+ 
+  const open = sortTasksByPriority(
+    todayTasks.filter(
+      (task) => task.status !== "Done",
+    ),
+  );
 
-  const unscheduledTasks = tasks.filter(
-    (task) =>
-      !task.dueDate &&
-      task.status !== "Done"
+  const done = sortTasksByPriority(
+    todayTasks.filter(
+      (task) => task.status === "Done",
+    ),
+  );
+
+  const unscheduledTasks = sortTasksByPriority(
+    tasks.filter(
+      (task) =>
+        !task.dueDate &&
+        task.status !== "Done",
+    ),
   );
 
   return (
